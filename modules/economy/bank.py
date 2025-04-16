@@ -172,5 +172,8 @@ class Bank(commands.Cog):
 
 # Esta función es obligatoria para que `bot.load_extension` lo añada como cog
 async def setup(bot: discord.Bot):
-    await bot.add_cog(Bank(bot))
-    print("✅ Bank cog registrado")
+    try:
+        await bot.add_cog(Bank(bot))
+        print("✅ Bank cog registrado exitosamente")
+    except Exception as e:
+        print(f"🔥 Error registrando Bank cog: {str(e)}")

@@ -24,14 +24,13 @@ async def main():
     modules = [
         'modules.economy.bank',
         'modules.economy.work',
-        'modules.gacha.rolls',
     ]
     for module in modules:
         try:
-            await bot.load_extension(module)  # ✅ Correcto
-            print(f'Módulo {module} cargado con éxito')
+            bot.load_extension(module)  # ❌ Quita el "await" aquí
+            print(f'✅ Módulo {module} cargado')  # Añade este print
         except Exception as e:
-            print(f'Error al cargar {module}: {e}')
+            print(f'❌ Error cargando {module}: {str(e)}')
 
 # Arranca el bot
 bot.run(TOKEN)
