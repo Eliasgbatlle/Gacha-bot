@@ -1,17 +1,10 @@
 import discord
-from dotenv import load_dotenv
 import os
 import json
-import asyncio
-import time
+from dotenv import load_dotenv
 
 load_dotenv()
-
-def load_config():
-    with open('config.json', 'r') as f:
-        return json.load(f)
-
-config = load_config()
+TOKEN = os.getenv("DISCORD_TOKEN")
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -22,37 +15,23 @@ bot = discord.Bot(intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f'Bot conectado como {bot.user.name} (ID: {bot.user.id})')
-    print(f'En {len(bot.guilds)} servidores')
-    await bot.change_presence(activity=discord.Game(name="Gacha +18"))
-    print("Comandos slash listos.")  # Asegúrate de sincronizar los comandos tipo slash
+    print(f'✅ Bot conectado como {bot.user.name} (ID: {bot.user.id})')
+    print(f'🌐 En {len(bot.guilds)} servidores')
+    print("⚡ Comandos slash listos.")
 
-@bot.slash_command(name="ping", description="Verifica la latencia del bot")
-async def ping(ctx: discord.ApplicationContext):
-    start = time.perf_counter()
-    message = await ctx.respond("🏓 Calculando latencia...")
-    end = time.perf_counter()
-    latency = round((end - start) * 1000)
-    await message.edit_original_response(content=f"🏓 Pong! Latencia: {latency}ms")
+# Carga tus extensiones (cogs)
+modules = [
+    'modules.economy.bank',
+    'modules.economy.work',
+    'modules.gacha.rolls',
+]
 
-@bot.event
-async def on_application_command_error(ctx, error):
-    print(f"Error en slash command: {error}")
+for module in modules:
+    try:
+        bot.load_extension(module)
+        print(f'✅ Módulo {module} cargado con éxito')
+    except Exception as e:
+        print(f'❌ Error al cargar {module}: {e}')
 
-async def main():
-    modules = [
-        'modules.economy.bank',
-        'modules.economy.work',
-        'modules.gacha.rolls',
-    ]
-    for module in modules:
-        try:
-            bot.load_extension(module)
-            print(f'Módulo {module} cargado con éxito')
-        except Exception as e:
-            print(f'Error al cargar {module}: {e}')
-
-    await bot.start(config["token"])
-
-if __name__ == '__main__':
-    asyncio.run(main())
+# Arranca el bot
+bot.run(TOKEN)
