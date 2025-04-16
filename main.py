@@ -1,9 +1,8 @@
 import discord
-from discord.ext import commands
 from dotenv import load_dotenv
 import os
 import json
-import asyncio  # Para poder usar async main
+import asyncio
 
 load_dotenv()
 token = os.getenv("DISCORD_TOKEN")
@@ -19,7 +18,8 @@ intents.messages = True
 intents.guilds = True
 intents.message_content = True
 
-bot = commands.Bot(command_prefix=config["prefix"], intents=intents)
+# 👇 Cambiamos a discord.Bot para soportar slash commands
+bot = discord.Bot(intents=intents)
 
 @bot.event
 async def on_ready():
@@ -27,18 +27,17 @@ async def on_ready():
     print(f'En {len(bot.guilds)} servidores')
     await bot.change_presence(activity=discord.Game(name="Gacha +18"))
 
-@bot.command(name='ping')
+# 🆕 Slash command en lugar del viejo @bot.command
+@bot.slash_command(name="ping", description="Verifica la latencia del bot")
 async def ping(ctx):
-    await ctx.send(f'🏓 Pong! Latencia: {round(bot.latency * 1000)}ms')
+    await ctx.respond(f'🏓 Pong! Latencia: {round(bot.latency * 1000)}ms')
 
+# 👇 Manejamos errores solo si mantienes comandos clásicos también
 @bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        await ctx.send(f"Comando no encontrado. Comandos disponibles: {', '.join([cmd.name for cmd in bot.commands])}")
-    else:
-        print(f"Error no manejado: {error}")
+async def on_application_command_error(ctx, error):
+    print(f"Error en slash command: {error}")
 
-# ✅ Nueva función async que carga los módulos correctamente
+# Carga dinámica de extensiones (módulos)
 async def main():
     modules = [
         'modules.economy.bank',
@@ -54,6 +53,5 @@ async def main():
 
     await bot.start(config["token"])
 
-# ✅ Inicia el bot usando asyncio
 if __name__ == '__main__':
     asyncio.run(main())
