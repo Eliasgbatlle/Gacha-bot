@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 import json
 import asyncio
+import time
 
 load_dotenv()
 token = os.getenv("DISCORD_TOKEN")
@@ -30,7 +31,11 @@ async def on_ready():
 # 🆕 Slash command en lugar del viejo @bot.command
 @bot.slash_command(name="ping", description="Verifica la latencia del bot")
 async def ping(ctx):
-    await ctx.respond(f'🏓 Pong! Latencia: {round(bot.latency * 1000)}ms')
+    start = time.perf_counter()
+    message = await ctx.respond("🏓 Calculando latencia...")
+    end = time.perf_counter()
+    latency = round((end - start) * 1000)
+    await message.edit_original_response(content=f"🏓 Pong! Latencia: {latency}ms")
 
 # 👇 Manejamos errores solo si mantienes comandos clásicos también
 @bot.event
