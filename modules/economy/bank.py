@@ -125,5 +125,5 @@ class Bank(commands.Cog):
         await ctx.respond(embed=embed)
 
 # CORRECTO: esto se espera por main.py
-async def setup(bot: discord.Bot):
+async def setup(bot):
     await bot.add_cog(Bank(bot))
