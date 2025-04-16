@@ -177,3 +177,5 @@ async def setup(bot: discord.Bot):
         print("✅ Bank cog registrado exitosamente")
     except Exception as e:
         print(f"🔥 Error registrando Bank cog: {str(e)}")
+
+print("paso el def setup")
