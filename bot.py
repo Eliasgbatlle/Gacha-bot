@@ -1,36 +1,39 @@
 import discord
 from discord.ext import commands
 import os
-import asyncio  # necesario para manejar la función async de setup_bot
+import asyncio
+import importlib
+from dotenv import load_dotenv
 
+# Cargar variables de entorno (.env o Render)
+load_dotenv()
+TOKEN = os.getenv("TOKEN")
+
+# Intents (asegúrate que estén activados en Discord Dev Portal)
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True  # Necesario para algunas funciones
 
+# Crear el bot
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# Cargar los módulos (cogs) automáticamente desde la carpeta "modules"
+async def cargar_modulos():
+    for archivo in os.listdir("./modules"):
+        if archivo.endswith(".py"):
+            nombre_modulo = archivo[:-3]
+            try:
+                await bot.load_extension(f"modules.{nombre_modulo}")
+                print(f"✅ Módulo cargado: {nombre_modulo}")
+            except Exception as e:
+                print(f"❌ Error al cargar {nombre_modulo}: {e}")
+
+# Evento cuando el bot está listo
 @bot.event
 async def on_ready():
-    print(f"✅ Bot conectado como {bot.user}")
+    print(f"🤖 Bot conectado como {bot.user}")
+    await cargar_modulos()
 
-initial_extensions = [
-    'core.economy',
-    'core.gacha',
-    'core.bank',
-    'core.reputation',
-    'core.theft',
-    'core.factions',
-    'core.server_scope',
-]
-
-async def setup_bot():
-    for extension in initial_extensions:
-        try:
-            await bot.load_extension(extension)
-            print(f"🧩 Módulo cargado: {extension}")
-        except Exception as e:
-            print(f"❌ Error cargando {extension}: {e}")
-
-    await bot.start(os.getenv("TOKEN"))
-
-# Lanzar el bot
-asyncio.run(setup_bot())
+# Iniciar el bot
+if __name__ == "__main__":
+    asyncio.run(bot.start(TOKEN))
