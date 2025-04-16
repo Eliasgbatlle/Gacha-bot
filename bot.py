@@ -1,39 +1,43 @@
 import discord
 from discord.ext import commands
 import os
-import asyncio
-import importlib
 from dotenv import load_dotenv
 
-# Cargar variables de entorno (.env o Render)
+# Módulos personalizados
+from modules.economy import get_balance, daily_reward, work, crime
+
+# Cargar variables de entorno
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 
-# Intents (asegúrate que estén activados en Discord Dev Portal)
+# Configurar intents
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True  # Necesario para algunas funciones
+intents.members = True
 
-# Crear el bot
+# Crear instancia del bot
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Cargar los módulos (cogs) automáticamente desde la carpeta "modules"
-async def cargar_modulos():
-    for archivo in os.listdir("./modules"):
-        if archivo.endswith(".py"):
-            nombre_modulo = archivo[:-3]
-            try:
-                await bot.load_extension(f"modules.{nombre_modulo}")
-                print(f"✅ Módulo cargado: {nombre_modulo}")
-            except Exception as e:
-                print(f"❌ Error al cargar {nombre_modulo}: {e}")
-
-# Evento cuando el bot está listo
 @bot.event
 async def on_ready():
-    print(f"🤖 Bot conectado como {bot.user}")
-    await cargar_modulos()
+    print(f"✅ Bot conectado como {bot.user}")
 
-# Iniciar el bot
-if __name__ == "__main__":
-    asyncio.run(bot.start(TOKEN))
+# Comandos económicos
+@bot.command(name="balance")
+async def balance(ctx):
+    await get_balance(ctx)
+
+@bot.command(name="daily")
+async def daily(ctx):
+    await daily_reward(ctx)
+
+@bot.command(name="work")
+async def work_command(ctx):
+    await work(ctx)
+
+@bot.command(name="crime")
+async def crime_command(ctx):
+    await crime(ctx)
+
+# Ejecutar bot
+bot.run(TOKEN)
