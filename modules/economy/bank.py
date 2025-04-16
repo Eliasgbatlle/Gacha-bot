@@ -108,5 +108,36 @@ class Bank(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    # --- COMANDO: !perfil ---
+    @commands.command(name="perfil")
+    async def show_profile(self, ctx):
+        """Muestra tu perfil con reputación, monedas y valor de personajes"""
+        user_id = str(ctx.author.id)
+        server_id = str(ctx.guild.id)
+
+        # 1. Obtener datos del usuario y personajes
+        user = self.db.get_user(user_id, server_id)
+        characters = self.db.get_characters(user_id, server_id)
+        total_characters_value = sum(char["value"] for char in characters) if characters else 0
+
+        # 2. Determinar emoji de reputación
+        if user["reputation"] > 0:
+            rep_emoji = "😇"
+        elif user["reputation"] < 0:
+            rep_emoji = "😈"
+        else:
+            rep_emoji = "😐"
+
+        # 3. Crear embed
+        embed = discord.Embed(
+            title=f"📊 Perfil de {ctx.author.display_name}",
+            color=0x7289DA
+        )
+        embed.add_field(name="💎 Monedas", value=f"{user['coins']}", inline=True)
+        embed.add_field(name="🎭 Reputación", value=f"{user['reputation']} pts {rep_emoji}", inline=True)
+        embed.add_field(name="🧑‍🎨 Valor en personajes", value=f"{total_characters_value}", inline=True)
+        
+        await ctx.send(embed=embed)
+
 async def setup(bot):
     await bot.add_cog(Bank(bot))
