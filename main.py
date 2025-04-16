@@ -22,8 +22,8 @@ bot = discord.Bot(intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f'Bot conectado como {bot.user.name} (ID: {bot.user.id})')
-    print(f'En {len(bot.guilds)} servidores')
+    print(f'✅ Bot conectado como {bot.user.name} (ID: {bot.user.id})')
+    print(f'🌐 En {len(bot.guilds)} servidores')
     await bot.change_presence(activity=discord.Game(name="Gacha +18"))
 
 @bot.slash_command(name="ping", description="Verifica la latencia del bot")
@@ -36,7 +36,7 @@ async def ping(ctx: discord.ApplicationContext):
 
 @bot.event
 async def on_application_command_error(ctx, error):
-    print(f"Error en slash command: {error}")
+    print(f"❌ Error en slash command: {error}")
 
 async def main():
     modules = [
@@ -46,10 +46,10 @@ async def main():
     ]
     for module in modules:
         try:
-            bot.load_extension(module)
-            print(f'Módulo {module} cargado con éxito')
+            await bot.load_extension(module)
+            print(f'✅ Módulo {module} cargado con éxito')
         except Exception as e:
-            print(f'Error al cargar {module}: {e}')
+            print(f'❌ Error al cargar {module}: {e}')
 
     await bot.start(config["token"])
 

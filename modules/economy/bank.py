@@ -106,7 +106,4 @@ class Bank(commands.Cog):
         embed.add_field(name="🎭 Reputación", value=f"{user['reputation']} pts {rep_emoji}", inline=True)
         embed.add_field(name="🧑‍🎨 Valor en personajes", value=f"{total_characters_value}", inline=True)
         
-        await ctx.respond(embed=embed)
-
-async def setup(bot: discord.Bot):
-    await bot.add_cog(Bank(bot))
+        await ctx.respond(embed
