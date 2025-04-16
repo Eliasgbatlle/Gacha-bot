@@ -20,18 +20,18 @@ async def on_ready():
     print("⚡ Comandos slash listos.")
 
 # Carga tus extensiones (cogs)
-modules = [
-    'modules.economy.bank',
-    'modules.economy.work',
-    'modules.gacha.rolls',
-]
-
-for module in modules:
-    try:
-        await bot.load_extension(module)
-        print(f'✅ Módulo {module} cargado con éxito')
-    except Exception as e:
-        print(f'❌ Error al cargar {module}: {e}')
+async def main():
+    modules = [
+        'modules.economy.bank',
+        'modules.economy.work',
+        'modules.gacha.rolls',
+    ]
+    for module in modules:
+        try:
+            await bot.load_extension(module)  # ✅ Correcto
+            print(f'Módulo {module} cargado con éxito')
+        except Exception as e:
+            print(f'Error al cargar {module}: {e}')
 
 # Arranca el bot
 bot.run(TOKEN)
