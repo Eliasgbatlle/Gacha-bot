@@ -26,7 +26,6 @@ intents.message_content = True  # Para leer contenido de mensajes (requerido en 
 bot = commands.Bot(
     command_prefix=config["prefix"],  # Prefijo de comandos (ej. "!")
     intents=intents,
-    help_command=None  # Desactivamos el comando !help por defecto (opcional)
 )
 
 # 4. Evento: Cuando el bot está listo
@@ -61,3 +60,10 @@ async def ping(ctx):
 if __name__ == '__main__':
     load_modules()  # Cargamos módulos
     bot.run(config["token"])  # Inicia el bot con el token
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send(f"Comando no encontrado. Comandos disponibles: {', '.join([cmd.name for cmd in bot.commands])}")
+    else:
+        print(f"Error no manejado: {error}")
