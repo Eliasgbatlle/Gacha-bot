@@ -8,7 +8,7 @@ class Bank(commands.Cog):
         self.bot = bot
         self.db = Database()
 
-    @commands.slash_command(name="info_protec", description="Muestra tiempo restante de protección y costo diario.")
+    @discord.slash_command(name="info_protec", description="Muestra tiempo restante de protección y costo diario.")
     async def protection_info(self, ctx: discord.ApplicationContext):
         await ctx.defer()
         user_id = str(ctx.user.id)
@@ -32,7 +32,7 @@ class Bank(commands.Cog):
         embed.add_field(name="💵 Costo por día", value=f"{daily_fee:.2f} monedas", inline=False)
         await ctx.respond(embed=embed)
 
-    @commands.slash_command(name="pagar_banco", description="Paga protección por X días (ajustado por reputación).")
+    @discord.slash_command(name="pagar_banco", description="Paga protección por X días (ajustado por reputación).")
     async def pay_protection(self, ctx: discord.ApplicationContext, dias: int):
         if dias <= 0:
             await ctx.respond("❌ ¡Debes especificar un número de días válido!")
@@ -64,7 +64,7 @@ class Bank(commands.Cog):
 
         await ctx.respond(f"✅ Protección pagada por {dias} días. Costo: {total_fee:.2f} monedas.")
 
-    @commands.slash_command(name="inventario", description="Muestra personajes con imágenes y totales.")
+    @discord.slash_command(name="inventario", description="Muestra personajes con imágenes y totales.")
     async def show_inventory(self, ctx: discord.ApplicationContext):
         user_id = str(ctx.user.id)
         server_id = str(ctx.guild.id)
@@ -88,7 +88,7 @@ class Bank(commands.Cog):
 
         await ctx.respond(embed=embed)
 
-    @commands.slash_command(name="perfil", description="Muestra tu perfil con reputación, monedas y valor.")
+    @discord.slash_command(name="perfil", description="Muestra tu perfil con reputación, monedas y valor.")
     async def show_profile(self, ctx: discord.ApplicationContext):
         user_id = str(ctx.user.id)
         server_id = str(ctx.guild.id)
