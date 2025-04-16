@@ -1,32 +1,33 @@
 import discord
 from discord.ext import commands
 import os
-import json
 
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Carga o crea archivo data.json
-if not os.path.exists("data/data.json"):
-    with open("data/data.json", "w") as f:
-        json.dump({}, f)
-
-def cargar_datos():
-    with open("data/data.json", "r") as f:
-        return json.load(f)
-
-def guardar_datos(data):
-    with open("data/data.json", "w") as f:
-        json.dump(data, f, indent=4)
-
 @bot.event
 async def on_ready():
-    print(f"Bot conectado como {bot.user}")
+    print(f"✅ Bot conectado como {bot.user}")
 
-@bot.command()
-async def ping(ctx):
-    await ctx.send("Pong!")
+# Cargar módulos
+initial_extensions = [
+    'core.economy',
+    'core.gacha',
+    'core.bank',
+    'core.reputation',
+    'core.theft',
+    'core.factions',
+    'core.server_scope',
+]
+
+for extension in initial_extensions:
+    try:
+        bot.load_extension(extension)
+        print(f"🧩 Módulo cargado: {extension}")
+    except Exception as e:
+        print(f"❌ Error cargando {extension}: {e}")
 
 bot.run(os.getenv("TOKEN"))
+
