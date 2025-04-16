@@ -46,7 +46,7 @@ async def main():
     ]
     for module in modules:
         try:
-            await bot.load_extension(module)
+            bot.load_extension(module)
             print(f'Módulo {module} cargado con éxito')
         except Exception as e:
             print(f'Error al cargar {module}: {e}')
