@@ -42,6 +42,7 @@ async def on_command_error(ctx, error):
 async def main():
     modules = [
         'modules.economy.bank',
+        'modules.economy.work',
         'modules.gacha.rolls',
     ]
     for module in modules:
