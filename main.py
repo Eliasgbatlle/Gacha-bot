@@ -51,8 +51,6 @@ async def main():
         except Exception as e:
             print(f'Error al cargar {module}: {e}')
 
-    # Sincroniza los comandos slash del bot.
-    await bot.tree.sync()
     await bot.start(config["token"])
 
 if __name__ == '__main__':
