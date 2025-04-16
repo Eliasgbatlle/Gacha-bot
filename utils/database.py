@@ -43,7 +43,9 @@ class Database:
 
     def get_connection(self):
         """Retorna una conexión a la base de datos."""
-        return sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row  # Esto convierte las filas en diccionarios
+        return conn
 
     # --- Métodos para 'users' ---
 
@@ -68,20 +70,7 @@ class Database:
 
             return user
 
-    def update_user(self, user_id: str, server_id: str, data: dict):
-        """Actualiza datos de un usuario."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            set_clause = ", ".join(f"{key} = ?" for key in data.keys())
-            values = list(data.values()) + [user_id, server_id]
-            cursor.execute(
-                f"UPDATE users SET {set_clause} WHERE user_id = ? AND server_id = ?",
-                values
-            )
-            conn.commit()
-
     # --- Métodos para 'characters' ---
-
     def add_character(self, character_data: dict):
         """Añade un personaje a la DB."""
         with self.get_connection() as conn:
@@ -112,4 +101,16 @@ class Database:
                 "SELECT * FROM characters WHERE owner_id = ? AND server_id = ?",
                 (owner_id, server_id)
             )
-            return cursor.fetchall()
+            return cursor.fetchall()  # Ahora devuelve los resultados como diccionarios
+
+    def update_user(self, user_id: str, server_id: str, data: dict):
+        """Actualiza datos de un usuario."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            set_clause = ", ".join(f"{key} = ?" for key in data.keys())
+            values = list(data.values()) + [user_id, server_id]
+            cursor.execute(
+                f"UPDATE users SET {set_clause} WHERE user_id = ? AND server_id = ?",
+                values
+            )
+            conn.commit()
