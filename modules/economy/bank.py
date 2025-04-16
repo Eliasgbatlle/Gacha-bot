@@ -1,15 +1,14 @@
 import discord
-from discord.ext import commands
 from datetime import datetime, timedelta
 from utils.database import Database  # Importamos la DB
 
-class Bank(commands.Cog):
+class Bank(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.db = Database()  # Instancia de la base de datos
 
-    # --- COMANDO: !info protec ---
-    @commands.command(name="infoProtec")
+    # --- COMANDO: /info_protec ---
+    @discord.slash_command(name="info_protec", description="Muestra tiempo restante de protección y costo diario.")
     async def protection_info(self, ctx):
         """Muestra tiempo restante de protección y costo diario."""
         user_id = str(ctx.author.id)
@@ -38,8 +37,8 @@ class Bank(commands.Cog):
         embed.add_field(name="💵 Costo por día", value=f"{daily_fee:.2f} monedas", inline=False)
         await ctx.send(embed=embed)
 
-    # --- COMANDO: !pagar banco <días> ---
-    @commands.command(name="pagarBanco")
+    # --- COMANDO: /pagar_banco <días> ---
+    @discord.slash_command(name="pagar_banco", description="Paga protección por X días (con ajuste de reputación).")
     async def pay_protection(self, ctx, days: int):
         """Paga protección por X días (con ajuste de reputación)."""
         if days <= 0:
@@ -78,8 +77,8 @@ class Bank(commands.Cog):
 
         await ctx.send(f"✅ Protección pagada por {days} días. Costo: {total_fee:.2f} monedas.")
 
-    # --- COMANDO: !inventario ---
-    @commands.command(name="inventario")
+    # --- COMANDO: /inventario ---
+    @discord.slash_command(name="inventario", description="Muestra personajes con imágenes y totales.")
     async def show_inventory(self, ctx):
         """Muestra personajes con imágenes y totales."""
         user_id = str(ctx.author.id)
@@ -108,8 +107,8 @@ class Bank(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    # --- COMANDO: !perfil ---
-    @commands.command(name="perfil")
+    # --- COMANDO: /perfil ---
+    @discord.slash_command(name="perfil", description="Muestra tu perfil con reputación, monedas y valor de personajes.")
     async def show_profile(self, ctx):
         """Muestra tu perfil con reputación, monedas y valor de personajes"""
         user_id = str(ctx.author.id)
