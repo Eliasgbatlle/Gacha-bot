@@ -19,6 +19,8 @@ async def on_ready():
     print(f'🌐 En {len(bot.guilds)} servidores')
     print("⚡ Comandos slash listos.")
 
+print("Paso el bot.event")
+
 # Carga tus extensiones (cogs)
 async def main():
     modules = [
@@ -32,5 +34,10 @@ async def main():
         except Exception as e:
             print(f'❌ Error cargando {module}: {str(e)}')
 
+print("Paso el def main")
+
 # Arranca el bot
 bot.run(TOKEN)
+
+
+print("arrancó el token")
