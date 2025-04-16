@@ -25,7 +25,7 @@ async def on_ready():
     print(f'Bot conectado como {bot.user.name} (ID: {bot.user.id})')
     print(f'En {len(bot.guilds)} servidores')
     await bot.change_presence(activity=discord.Game(name="Gacha +18"))
-    await bot.tree.sync()  # Asegúrate de sincronizar los comandos tipo slash
+    print("Comandos slash listos.")  # Asegúrate de sincronizar los comandos tipo slash
 
 @bot.slash_command(name="ping", description="Verifica la latencia del bot")
 async def ping(ctx: discord.ApplicationContext):
