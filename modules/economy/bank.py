@@ -171,6 +171,6 @@ class Bank(commands.Cog):
         await ctx.respond(embed=embed)
 
 # Esta función es obligatoria para que `bot.load_extension` lo añada como cog
-def setup(bot: discord.Bot):
-    bot.add_cog(Bank(bot))
+async def setup(bot: discord.Bot):
+    await bot.add_cog(Bank(bot))
     print("✅ Bank cog registrado")
