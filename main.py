@@ -40,8 +40,8 @@ async def on_ready():
 def load_modules():
     """Carga todos los módulos de la carpeta /modules"""
     modules = [
-        'modules.economy.bank',
-        'modules.gacha.rolls',
+        'modules.economy.bank.py',
+        'modules.gacha.rolls.py',
         # Añade aquí otros módulos
     ]
     for module in modules:
