@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import ApplicationContext
+from discord import app_commands
 from datetime import datetime, timedelta
 from utils.database import Database
 
@@ -9,14 +9,13 @@ class Bank(commands.Cog):
         self.bot = bot
         self.db = Database()
 
-    # --- SLASH COMMAND: /info_protec ---
-    @discord.slash_command(name="info_protec", description="Muestra tiempo restante de protección y costo diario.")
-    async def protection_info(self, ctx: ApplicationContext):
-        await ctx.defer()  # Opcional: si toma tiempo, evita timeout
-
-        user_id = str(ctx.author.id)
-        server_id = str(ctx.guild.id)
-
+    @app_commands.command(name="info_protec", description="Muestra tiempo restante de protección y costo diario.")
+    async def protection_info(self, interaction: discord.Interaction):
+        # Defer para evitar timeout en la respuesta si se requiere tiempo.
+        await interaction.response.defer()
+        
+        user_id = str(interaction.user.id)
+        server_id = str(interaction.guild.id)
         user = self.db.get_user(user_id, server_id)
         characters = self.db.get_characters(user_id, server_id)
         total_value = sum(char["value"] for char in characters) if characters else 0
@@ -34,28 +33,25 @@ class Bank(commands.Cog):
         embed.add_field(name="💰 Valor de la cartera", value=f"{total_value} monedas", inline=False)
         embed.add_field(name="⏳ Tiempo restante", value=f"{remaining_hours:.1f} horas", inline=False)
         embed.add_field(name="💵 Costo por día", value=f"{daily_fee:.2f} monedas", inline=False)
-        await ctx.respond(embed=embed)
+        await interaction.followup.send(embed=embed)
 
-    # --- SLASH COMMAND: /pagar_banco ---
-    @discord.slash_command(name="pagar_banco", description="Paga protección por X días (ajustado por reputación).")
-    async def pay_protection(self, ctx: ApplicationContext, dias: int):
+    @app_commands.command(name="pagar_banco", description="Paga protección por X días (ajustado por reputación).")
+    async def pay_protection(self, interaction: discord.Interaction, dias: int):
         if dias <= 0:
-            await ctx.respond("❌ ¡Debes especificar un número de días válido!")
+            await interaction.response.send_message("❌ ¡Debes especificar un número de días válido!")
             return
 
-        user_id = str(ctx.author.id)
-        server_id = str(ctx.guild.id)
-
+        user_id = str(interaction.user.id)
+        server_id = str(interaction.guild.id)
         user = self.db.get_user(user_id, server_id)
         characters = self.db.get_characters(user_id, server_id)
         total_value = sum(char["value"] for char in characters) if characters else 0
-
         base_fee = total_value * 0.05
         fee_multiplier = 0.85 if user["reputation"] > 0 else 1.15 if user["reputation"] < 0 else 1.0
         total_fee = base_fee * fee_multiplier * dias
 
         if user["coins"] < total_fee:
-            await ctx.respond(f"❌ No tienes suficientes monedas. Necesitas: {total_fee:.2f}")
+            await interaction.response.send_message(f"❌ No tienes suficientes monedas. Necesitas: {total_fee:.2f}")
             return
 
         now = datetime.now()
@@ -69,19 +65,17 @@ class Bank(commands.Cog):
             {"protection_until": new_protection.isoformat(), "coins": user["coins"] - total_fee}
         )
 
-        await ctx.respond(f"✅ Protección pagada por {dias} días. Costo: {total_fee:.2f} monedas.")
+        await interaction.response.send_message(f"✅ Protección pagada por {dias} días. Costo: {total_fee:.2f} monedas.")
 
-    # --- SLASH COMMAND: /inventario ---
-    @discord.slash_command(name="inventario", description="Muestra personajes con imágenes y totales.")
-    async def show_inventory(self, ctx: ApplicationContext):
-        user_id = str(ctx.author.id)
-        server_id = str(ctx.guild.id)
-
+    @app_commands.command(name="inventario", description="Muestra personajes con imágenes y totales.")
+    async def show_inventory(self, interaction: discord.Interaction):
+        user_id = str(interaction.user.id)
+        server_id = str(interaction.guild.id)
         characters = self.db.get_characters(user_id, server_id)
         total_value = sum(char["value"] for char in characters) if characters else 0
 
         embed = discord.Embed(
-            title=f"📦 Inventario de {ctx.author.display_name}",
+            title=f"📦 Inventario de {interaction.user.display_name}",
             description=f"**Valor total:** {total_value} monedas",
             color=0x00ff00
         )
@@ -95,35 +89,27 @@ class Bank(commands.Cog):
             if char.get("image_url"):
                 embed.set_thumbnail(url=char["image_url"])
 
-        await ctx.respond(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
-    # --- SLASH COMMAND: /perfil ---
-    @discord.slash_command(name="perfil", description="Muestra tu perfil con reputación, monedas y valor.")
-    async def show_profile(self, ctx: ApplicationContext):
-        user_id = str(ctx.author.id)
-        server_id = str(ctx.guild.id)
-
+    @app_commands.command(name="perfil", description="Muestra tu perfil con reputación, monedas y valor.")
+    async def show_profile(self, interaction: discord.Interaction):
+        user_id = str(interaction.user.id)
+        server_id = str(interaction.guild.id)
         user = self.db.get_user(user_id, server_id)
         characters = self.db.get_characters(user_id, server_id)
         total_characters_value = sum(char["value"] for char in characters) if characters else 0
 
-        if user["reputation"] > 0:
-            rep_emoji = "😇"
-        elif user["reputation"] < 0:
-            rep_emoji = "😈"
-        else:
-            rep_emoji = "😐"
+        rep_emoji = "😇" if user["reputation"] > 0 else "😈" if user["reputation"] < 0 else "😐"
 
         embed = discord.Embed(
-            title=f"📊 Perfil de {ctx.author.display_name}",
+            title=f"📊 Perfil de {interaction.user.display_name}",
             color=0x7289DA
         )
         embed.add_field(name="💎 Monedas", value=f"{user['coins']}", inline=True)
         embed.add_field(name="🎭 Reputación", value=f"{user['reputation']} pts {rep_emoji}", inline=True)
         embed.add_field(name="🧑‍🎨 Valor en personajes", value=f"{total_characters_value}", inline=True)
         
-        await ctx.respond(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
-# CORRECTO: esto se espera por main.py
-async def setup(bot):
+async def setup(bot: discord.Bot):
     await bot.add_cog(Bank(bot))

@@ -6,7 +6,6 @@ import asyncio
 import time
 
 load_dotenv()
-token = os.getenv("DISCORD_TOKEN")
 
 def load_config():
     with open('config.json', 'r') as f:
@@ -19,7 +18,6 @@ intents.messages = True
 intents.guilds = True
 intents.message_content = True
 
-# 👇 Cambiamos a discord.Bot para soportar slash commands
 bot = discord.Bot(intents=intents)
 
 @bot.event
@@ -28,21 +26,18 @@ async def on_ready():
     print(f'En {len(bot.guilds)} servidores')
     await bot.change_presence(activity=discord.Game(name="Gacha +18"))
 
-# 🆕 Slash command en lugar del viejo @bot.command
 @bot.slash_command(name="ping", description="Verifica la latencia del bot")
-async def ping(ctx):
+async def ping(ctx: discord.ApplicationContext):
     start = time.perf_counter()
     message = await ctx.respond("🏓 Calculando latencia...")
     end = time.perf_counter()
     latency = round((end - start) * 1000)
     await message.edit_original_response(content=f"🏓 Pong! Latencia: {latency}ms")
 
-# 👇 Manejamos errores solo si mantienes comandos clásicos también
 @bot.event
 async def on_application_command_error(ctx, error):
     print(f"Error en slash command: {error}")
 
-# Carga dinámica de extensiones (módulos)
 async def main():
     modules = [
         'modules.economy.bank',
@@ -56,6 +51,8 @@ async def main():
         except Exception as e:
             print(f'Error al cargar {module}: {e}')
 
+    # Sincroniza los comandos slash del bot.
+    await bot.tree.sync()
     await bot.start(config["token"])
 
 if __name__ == '__main__':
