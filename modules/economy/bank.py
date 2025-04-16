@@ -9,7 +9,7 @@ class Bank(commands.Cog):
         self.db = Database()  # Instancia de la base de datos
 
     # --- COMANDO: !info protec ---
-    @commands.command(name="info protec")
+    @commands.command(name="infoProtec")
     async def protection_info(self, ctx):
         """Muestra tiempo restante de protección y costo diario."""
         user_id = str(ctx.author.id)
@@ -39,7 +39,7 @@ class Bank(commands.Cog):
         await ctx.send(embed=embed)
 
     # --- COMANDO: !pagar banco <días> ---
-    @commands.command(name="pagar banco")
+    @commands.command(name="pagarBanco")
     async def pay_protection(self, ctx, days: int):
         """Paga protección por X días (con ajuste de reputación)."""
         if days <= 0:
