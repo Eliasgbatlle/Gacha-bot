@@ -53,13 +53,12 @@ async def main():
     modules = [
         'modules.economy.bank',
         'modules.economy.work',
-        'modules.gacha.rolls',
     ]
     print(f"🔌 Loading extensions: {modules}")
     for module in modules:
         print(f"➡️ Loading extension {module}...")
         try:
-            bot.load_extension(module)
+            await bot.load_extension(module)
             print(f"✅ Extension {module} loaded successfully")
         except Exception as e:
             print(f"❌ Failed to load extension {module}: {e}")
