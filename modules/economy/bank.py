@@ -102,28 +102,29 @@ class Bank(commands.Cog):
         except Exception as e:
             await ctx.respond(f"❌ Error al mostrar inventario: {e}")
 
-    @bot.slash_command(name="perfil", description="Muestra tu perfil con reputación, monedas y valor.")
-    async def show_profile(self, ctx: discord.ApplicationContext):
-        try:
-            user_id = str(ctx.user.id)
-            server_id = str(ctx.guild.id)
-            user = self.db.get_user(user_id, server_id)
-            characters = self.db.get_characters(user_id, server_id)
-            total_characters_value = sum(char["value"] for char in characters) if characters else 0
+@bot.slash_command(name="perfil", description="Muestra tu perfil con reputación, monedas y valor.")
+async def show_profile(self, ctx: discord.ApplicationContext):
+    try:
+        user_id = str(ctx.user.id)
+        server_id = str(ctx.guild.id)
+        user = self.db.get_user(user_id, server_id)
+        characters = self.db.get_characters(user_id, server_id)
+        total_characters_value = sum(char["value"] for char in characters) if characters else 0
 
-            rep_emoji = "😇" if user["reputation"] > 0 else "😈" if user["reputation"] < 0 else "😐"
+        rep_emoji = "😇" if user["reputation"] > 0 else "😈" if user["reputation"] < 0 else "😐"
 
-            embed = discord.Embed(
-                title=f"📊 Perfil de {ctx.user.display_name}",
-                color=0x7289DA
-            )
-            embed.add_field(name="💎 Monedas", value=f"{user['coins']}", inline=True)
-            embed.add_field(name="🎭 Reputación", value=f"{user['reputation']} pts {rep_emoji}", inline=True)
-            embed.add_field(name="🧑‍🎨 Valor en personajes", value=f"{total_characters_value}", inline=True)
+        embed = discord.Embed(
+            title=f"📊 Perfil de {ctx.user.display_name}",
+            color=0x7289DA
+        )
+        embed.add_field(name="💎 Monedas", value=f"{user['coins']}", inline=False)  # inline=False para poner en líneas separadas
+        embed.add_field(name="🎭 Reputación", value=f"{user['reputation']} pts {rep_emoji}", inline=False)  # inline=False
+        embed.add_field(name="🧑‍🎨 Valor en personajes", value=f"{total_characters_value}", inline=False)  # inline=False
 
-            await ctx.respond(embed=embed)
-        except Exception as e:
-            await ctx.respond(f"❌ Error al mostrar perfil: {e}")
+        await ctx.respond(embed=embed)
+    except Exception as e:
+        await ctx.respond(f"❌ Error al mostrar perfil: {e}")
+
 
 def setup(bot: discord.Bot):
     print("✅ Bank cargado")
