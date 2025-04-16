@@ -87,14 +87,28 @@ class CrimeSystem(commands.Cog):
         return 0.5 + (abs(rep) / 200)  # 50% base + hasta 50% extra
 
     @commands.command(name="trabajar")
+    @commands.cooldown(1, 7200, commands.BucketType.user)
     async def work(self, ctx):
-        """Trabajo de cobertura (para no morir de hambre)"""
+        """Trabajo normal (para no morir de hambre)"""
         await self._execute_crime(ctx, self.jobs, is_crime=False)
 
+    @work.error
+    async def work_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            remaining = str(timedelta(seconds=int(error.retry_after)))
+            await ctx.send(f"⏳ ¡Estás agotado! Descansa un poco. Podrás trabajar nuevamente en {remaining}")
+
     @commands.command(name="crimen")
+    @commands.cooldown(1, 7200, commands.BucketType.user)
     async def crime(self, ctx):
         """Dinero fácil, consecuencias difíciles"""
         await self._execute_crime(ctx, self.crimes, is_crime=True)
+
+    @crime.error
+    async def crime_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            remaining = str(timedelta(seconds=int(error.retry_after)))
+            await ctx.send(f"⏳ La policía está vigilando. Vuelve a intentarlo en {remaining}")
 
     async def _execute_crime(self, ctx, crimes_list, is_crime):
         user_id = str(ctx.author.id)
