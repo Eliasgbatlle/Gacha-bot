@@ -6,7 +6,7 @@ from utils.database import Database
 
 class CrimeSystem(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot = bot  # Asegúrate de que 'bot' se pase correctamente aquí
         self.db = Database()
         
         # Trabajos normales (fachada legal)
@@ -87,7 +87,7 @@ class CrimeSystem(commands.Cog):
         """Más reputación = más probabilidad de que te caguen"""
         return 0.5 + (abs(rep) / 200)  # 50% base + hasta 50% extra
 
-    @bot.slash_command(name="trabajar", description="Trabajo normal (para no morir de hambre)")
+    @commands.slash_command(name="trabajar", description="Trabajo normal (para no morir de hambre)")
     async def work(self, ctx):
         """Trabajo normal (para no morir de hambre)"""
         await self._execute_crime(ctx, self.jobs, is_crime=False)
@@ -98,7 +98,7 @@ class CrimeSystem(commands.Cog):
             remaining = str(timedelta(seconds=int(error.retry_after)))
             await ctx.respond(f"⏳ ¡Estás agotado! Descansa un poco. Podrás trabajar nuevamente en {remaining}")
 
-    @bot.slash_command(name="crimen", description="Dinero fácil, consecuencias difíciles")
+    @commands.slash_command(name="crimen", description="Dinero fácil, consecuencias difíciles")
     async def crime(self, ctx):
         """Dinero fácil, consecuencias difíciles"""
         await self._execute_crime(ctx, self.crimes, is_crime=True)
