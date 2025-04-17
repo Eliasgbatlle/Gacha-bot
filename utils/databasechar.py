@@ -105,12 +105,17 @@ def contar_disponibles():
     conn.close()
     return count
 
-def obtener_personajes_top(page):
-    url = f"https://api.jikan.moe/v4/top/characters?page={page}"
+def obtener_personajes_top(page=1):
+    url = f"https://api.jikan.moe/v4/characters?page={page}"
     response = requests.get(url)
     if response.status_code == 200:
-        return response.json().get("data", [])
-    return []
+        data = response.json()
+        print(f"🔍 Respuesta de la API para la página {page}: {data}")  # Log de la respuesta completa de la API
+        return data.get("data", [])
+    else:
+        print(f"❌ Error en la solicitud a la API para la página {page}: {response.status_code}")  # Log de error en la API
+        return []
+
 
 def generar_personajes_objetivo(objetivo=1000):
     print(f"🔄 Generando {objetivo} personajes...")  # Log de inicio de generación
