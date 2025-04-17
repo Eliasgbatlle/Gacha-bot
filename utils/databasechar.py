@@ -113,7 +113,7 @@ def obtener_personajes_top(page=1):
     if response.status_code == 200:
         data = response.json()
         print(f"🔍 Respuesta de la API para la página {page}: {data}")
-        time.sleep(0.2)  # Pausa de 0.2 segundos entre solicitudes para cumplir con el límite de 3 por segundo
+        time.sleep(0.2)  # Pausa de 0.2 segundos entre solicitudes
         return data.get("data", [])
     elif response.status_code == 429:
         print(f"❌ Error 429: Demasiadas solicitudes. Esperando 30 segundos...")
@@ -123,15 +123,14 @@ def obtener_personajes_top(page=1):
         print(f"❌ Error en la solicitud a la API para la página {page}: {response.status_code}")
         return []
 
-
 def generar_personajes_objetivo(objetivo=1000):
     print(f"🔄 Generando {objetivo} personajes...")
     current_page = 1
     generados = 0
 
-    while generados < objetivo:
+    while generados < objetivo and current_page <= 100:  # Limitar a 100 páginas
         print(f"🔄 Revisando personajes de la página {current_page}")
-        personajes = obtener_personajes_top(current_page)  # Llama a la nueva función
+        personajes = obtener_personajes_top(current_page)
         if not personajes:  # Si no hay personajes en la página, detener el ciclo
             break
         
@@ -173,16 +172,16 @@ def generar_personajes_objetivo(objetivo=1000):
                 imagen = nsfw_imagen
 
             rareza = asignar_rareza()
-            
+
+            # Imprime los datos antes de insertarlos para asegurarte de que todo es correcto
             print(f"Insertando personaje: {nombre}, {genero}, {imagen}, {serie}, {rareza}")
-            
+
             insertar_personaje(nombre, genero, imagen, serie, rareza)
             generados += 1
         
         current_page += 1
 
     print(f"✅ {generados} personajes generados con éxito.")  # Log de éxito
-
 
 
 def get_available_characters():
