@@ -32,7 +32,7 @@ class PaginatedView(discord.ui.View):
 class Characters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = "database.db"
+        self.db_path = "personaje.db"
 
     def buscar_personaje(self, nombre):
         print(f"🔄 Buscando personaje: {nombre}")  # Log de búsqueda
@@ -110,18 +110,28 @@ class Characters(commands.Cog):
         conn.close()
         await ctx.send(f"✅ Imagen de carta del personaje `{nombre}` actualizada.")
 
-    @bot.slash_command(name="personajes", description="Ver una lista de los personajes disponibles para reclamar")
-    async def personajes(self, ctx):
-        personajes = obtener_todos_los_personajes()
-        if not personajes:
-            await ctx.respond("No hay personajes disponibles.")
-            return
+        @bot.slash_command(name="personajes", description="Ver una lista de los personajes disponibles para reclamar")
+        async def personajes(self, ctx):
+            personajes = obtener_todos_los_personajes()
+            if not personajes:
+                await ctx.respond("No hay personajes disponibles.")
+                return
 
-        mensaje = ""
-        for p in personajes:
-            mensaje += f"**{p['nombre']}** - {p['rareza'].capitalize()} - {p['serie']}\n"
+            personajes_por_pagina = 10
+            embeds = []
 
-        await ctx.respond(mensaje[:2000])  # Discord tiene límite de 2000 caracteres
+            for i in range(0, len(personajes), personajes_por_pagina):
+                pagina = personajes[i:i+personajes_por_pagina]
+                embed = discord.Embed(
+                    title=f"Lista de personajes (pág. {i//personajes_por_pagina + 1})",
+                    color=discord.Color.blurple()
+                )
+                for p in pagina:
+                    embed.add_field(name=p['nombre'], value=f"{p['rareza'].capitalize()} - {p['serie']}", inline=False)
+                embeds.append(embed)
+
+            view = PaginatedView(embeds)
+            await ctx.respond(embed=embeds[0], view=view)
 
 def setup(bot: discord.Bot):
     print("✅ Characters cargado")
