@@ -87,7 +87,7 @@ def generar_personajes(cantidad=10, paginas_max=100):
 
             # Obtener detalles para género y serie
             detalles = requests.get(f"https://api.jikan.moe/v4/characters/{mal_id}/full").json()
-            genero = detalles.get("data", {}).get("gender", "Desconocido").lower()
+            genero = obtener_genero_desde_anilist(nombre)
             animes = detalles.get("data", {}).get("anime", [])
             serie = animes[0]["anime"]["title"] if animes else "Desconocida"
 
@@ -154,3 +154,32 @@ def obtener_todos_los_personajes():
         }
         for p in personajes
     ]
+
+import requests
+
+def obtener_genero_desde_anilist(nombre_personaje):
+    url_busqueda = "https://graphql.anilist.co"
+    
+    query = """
+    query ($nombre: String) {
+      Character (search: $nombre) {
+        name {
+          full
+        }
+        gender
+      }
+    }
+    """
+    variables = {
+        "nombre": nombre_personaje
+    }
+
+    response = requests.post(url_busqueda, json={"query": query, "variables": variables})
+
+    if response.status_code == 200:
+        datos = response.json()
+        if datos.get("data") and datos["data"].get("Character"):
+            # Extraer el género
+            genero = datos["data"]["Character"].get("gender", "Desconocido")
+            return genero.lower() if genero else "desconocido"
+    return "desconocido"
