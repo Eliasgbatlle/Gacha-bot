@@ -170,11 +170,24 @@ def generar_personajes_objetivo(objetivo=1000):
     print(f"✅ Se generaron {generados} personajes nuevos.")
 
 
-def get_available_characters():
+def obtener_todos_los_personajes():
     conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM personajes WHERE disponible = 1")  # Asumimos que la columna 'disponible' marca personajes disponibles
-    personajes = cursor.fetchall()
+    c = conn.cursor()
+    c.execute("SELECT * FROM personajes")
+    personajes = c.fetchall()
     conn.close()
-    print(f"Personajes disponibles: {personajes}")  # Agregar print aquí para ver los resultados
-    return personajes
+    
+    personajes_list = []
+    for personaje in personajes:
+        personajes_list.append({
+            "id": personaje[0],
+            "nombre": personaje[1],
+            "genero": personaje[2],
+            "rareza": personaje[3],
+            "precio_base": personaje[4],
+            "precio_actual": personaje[5],
+            "serie": personaje[6],
+            "popularidad": personaje[7],
+        })
+    return personajes_list
+
