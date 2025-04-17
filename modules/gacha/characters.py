@@ -97,7 +97,7 @@ class Characters(commands.Cog):
     @bot.slash_command(name="personajes", description="Ver una lista de los personajes disponibles para reclamar")
     async def personajes(self, ctx):
         await ctx.defer()
-        personajes = get_available_characters()
+        personajes = obtener_todos_los_personajes()
         print(personajes)  # Verifica los datos aquí
         if not personajes:
             await ctx.respond("No hay personajes disponibles en este momento.")
