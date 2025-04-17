@@ -189,8 +189,3 @@ def get_available_characters():
     
     print(f"Personajes disponibles: {personajes}")  # Agregar print aquí para ver los resultados
     return personajes
-
-
-if __name__ == "__main__":
-    crear_db()
-    generar_personajes_objetivo(1000)
