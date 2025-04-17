@@ -113,14 +113,15 @@ def obtener_personajes_top(page):
     return []
 
 def generar_personajes_objetivo(objetivo=1000):
-    print(f"🔄 Generando {objetivo} personajes...")  # Cambié 'total_personajes' por 'objetivo'
+    print(f"🔄 Generando {objetivo} personajes...")  # Log de inicio de generación
     current_page = 1
     generados = 0
 
     while generados < objetivo:
-        print(f"🔄 Revisando personajes de la página {current_page}")
+        print(f"🔄 Revisando personajes de la página {current_page}")  # Log para cada página revisada
         personajes = obtener_personajes_top(current_page)
         if not personajes:  # Si no hay personajes en la página, detener el ciclo
+            print(f"🔴 No se encontraron personajes en la página {current_page}.")
             break
         
         for personaje in personajes:
@@ -144,11 +145,19 @@ def generar_personajes_objetivo(objetivo=1000):
                 char_info_url = f"https://api.jikan.moe/v4/characters/{char_id}"
                 char_info_response = requests.get(char_info_url)
                 char_info = char_info_response.json().get("data", {})
+                
+                if not char_info:
+                    print(f"🔴 No se pudo obtener información del personaje para {nombre} ({char_id})")
+                    continue
+                
                 genero_api = char_info.get("gender", "Unknown")
-            except:
+            except Exception as e:
+                print(f"❌ Error al obtener datos de {char_id}: {e}")
                 continue
 
+            # Log de filtrado de género
             if genero_api not in ["Male", "Female", "Unknown"]:
+                print(f"🔴 Personaje {nombre} con género {genero_api} omitido.")
                 continue
 
             genero = "masculino" if genero_api == "Male" else "femenino"
@@ -157,12 +166,13 @@ def generar_personajes_objetivo(objetivo=1000):
             if genero_api in ["Female", "Unknown"]:
                 nsfw_imagen = obtener_imagen_gelbooru(nombre)
                 if not nsfw_imagen:
+                    print(f"🔴 No se encontró imagen NSFW para {nombre}.")
                     continue
                 imagen = nsfw_imagen
 
             rareza = asignar_rareza()
             
-            # Imprime los datos antes de insertarlos para asegurarte de que todo es correcto
+            # Log de inserción de personaje
             print(f"Insertando personaje: {nombre}, {genero}, {imagen}, {serie}, {rareza}")
             
             insertar_personaje(nombre, genero, imagen, serie, rareza)
@@ -170,7 +180,7 @@ def generar_personajes_objetivo(objetivo=1000):
         
         current_page += 1
 
-    print(f"✅ {generados} personajes generados con éxito.")  # Log de éxito
+    print(f"✅ {generados} personajes generados con éxito.")  # Log de éxito final
 
 
 def get_available_characters():
