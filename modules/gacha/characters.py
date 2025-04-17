@@ -34,19 +34,34 @@ class Characters(commands.Cog):
         self.db_path = "database.db"
 
     def buscar_personaje(self, nombre):
+        print(f"🔄 Buscando personaje: {nombre}")  # Log de búsqueda
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM personajes WHERE nombre LIKE ?", (f"%{nombre}%",))
         personaje = cursor.fetchone()
         conn.close()
+
+        if personaje:
+            print(f"✅ Personaje encontrado: {nombre}")  # Log de éxito
+        else:
+            print(f"❌ No se encontró el personaje: {nombre}")  # Log de no encontrado
+
         return personaje
 
     def buscar_por_serie(self, nombre_serie):
+        print(f"🔄 Buscando personajes por serie: {nombre_serie}")  # Log de búsqueda por serie
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM personajes WHERE serie LIKE ?", (f"%{nombre_serie}%",))
         personajes = cursor.fetchall()
         conn.close()
+
+        if personajes:
+            print(f"✅ Se encontraron {len(personajes)} personajes de la serie {nombre_serie}")  # Log de personajes encontrados
+        else:
+            print(f"❌ No se encontraron personajes de la serie {nombre_serie}")  # Log de no encontrados
+
+
         return personajes
 
     @bot.slash_command(name="info", description="/info <nombre> Muestra la carta de un personaje o todas las cartas de los personajes de una serie.")

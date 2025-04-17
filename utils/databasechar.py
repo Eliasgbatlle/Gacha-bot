@@ -33,6 +33,7 @@ RAREZAS = [
 def crear_db():
     if not os.path.exists("utils"):
         os.makedirs("utils")
+    print("🔄 Creando base de datos...")  # Log de inicio
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS personajes (
@@ -50,6 +51,7 @@ def crear_db():
                 )''')
     conn.commit()
     conn.close()
+    print("✅ Base de datos creada con éxito.")  # Log de éxito
 
 def insertar_personaje(nombre, genero, imagen, serie, rareza):
     conn = sqlite3.connect(DB_PATH)
@@ -111,6 +113,7 @@ def obtener_personajes_top(page):
     return []
 
 def generar_personajes_objetivo(objetivo=1000):
+    print(f"🔄 Generando {total_personajes} personajes...")
     current_page = 1
     generados = 0
 
@@ -167,16 +170,22 @@ def generar_personajes_objetivo(objetivo=1000):
         
         current_page += 1
 
-    print(f"✅ Se generaron {generados} personajes nuevos.")
+    print(f"✅ {generados} personajes generados con éxito.")  # Log de éxito
 
 
 def get_available_characters():
+    print("🔄 Obteniendo personajes disponibles...")  # Log de inicio
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM personajes WHERE disponible = 1")  # Asumimos que la columna 'disponible' marca personajes disponibles
     personajes = cursor.fetchall()
     conn.close()
     print(f"Personajes disponibles: {personajes}")  # Agregar print aquí para ver los resultados
+    if not personajes:
+        print("❌ No se encontraron personajes disponibles.")  # Log de no personajes
+    else:
+        print(f"✅ Se encontraron {len(personajes)} personajes.")  # Log de personajes encontrados
+
     return personajes
 
 def obtener_todos_los_personajes():
