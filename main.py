@@ -42,6 +42,7 @@ async def ping(ctx: discord.ApplicationContext):
 modules = [
     'modules.economy.bank',
     'modules.economy.work',
+    'modules.gacha.characters',
 ]
 
 for mod in modules:
