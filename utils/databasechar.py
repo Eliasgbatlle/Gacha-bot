@@ -1,0 +1,151 @@
+import sqlite3
+import os
+import random
+from jikanpy import Jikan
+from urllib.parse import urlparse
+import requests
+
+DB_PATH = "utils/characters.db"
+
+# Precios base según rareza
+PRECIOS_BASE = {
+    "E": 500,
+    "D": 2000,
+    "C": 8000,
+    "B": 20000,
+    "A": 50000,
+    "S": 150000,
+    "SS": 500000,
+    "SSS": 1000000
+}
+
+# Rareza con pesos
+RAREZAS = [
+    ("E", 30),
+    ("D", 25),
+    ("C", 15),
+    ("B", 10),
+    ("A", 8),
+    ("S", 6),
+    ("SS", 4),
+    ("SSS", 2)
+]
+
+def crear_db():
+    if not os.path.exists("utils"):
+        os.makedirs("utils")
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS personajes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nombre TEXT,
+                    genero TEXT,
+                    carta TEXT,
+                    nsfw BOOLEAN,
+                    serie TEXT,
+                    rareza TEXT,
+                    precio_base INTEGER,
+                    precio_actual INTEGER,
+                    popularidad INTEGER DEFAULT 0,
+                    estado TEXT DEFAULT 'disponible'
+                )''')
+    conn.commit()
+    conn.close()
+
+def insertar_personaje(nombre, genero, imagen, serie, rareza):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    precio = PRECIOS_BASE[rareza]
+    c.execute("SELECT * FROM personajes WHERE nombre = ?", (nombre,))
+    if c.fetchone():
+        conn.close()
+        return
+    c.execute("INSERT INTO personajes (nombre, genero, carta, nsfw, serie, rareza, precio_base, precio_actual) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+              (nombre, genero, imagen, genero != "masculino", serie, rareza, precio, precio))
+    conn.commit()
+    conn.close()
+
+def asignar_rareza():
+    total = sum(p for _, p in RAREZAS)
+    rand = random.randint(1, total)
+    acumulado = 0
+    for rareza, peso in RAREZAS:
+        acumulado += peso
+        if rand <= acumulado:
+            return rareza
+    return "E"
+
+def obtener_imagen_gelbooru(nombre):
+    try:
+        api_key = "f059a80db96a1032658f911e8dad84ba207abe8210faf272a4f6da2290b3356f"
+        url = f"https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags={nombre.replace(' ', '_')}&api_key={api_key}&limit=1"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            if data:
+                return data[0]["file_url"]
+    except:
+        return None
+    return None
+
+def contar_disponibles():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM personajes WHERE estado = 'disponible'")
+    count = c.fetchone()[0]
+    conn.close()
+    return count
+
+def generar_personajes_objetivo(objetivo=1000):
+    jikan = Jikan()
+    current_page = 1
+    generados = 0
+
+    while contar_disponibles() < objetivo:
+        print(f"🔄 Revisando personajes de la página {current_page}")
+        personajes = jikan.top("characters", page=current_page).get("data", [])
+        for personaje in personajes:
+            nombre = personaje.get("name")
+            character_url = personaje.get("url")
+            imagen = personaje.get("images", {}).get("jpg", {}).get("image_url")
+            anime_appearance = personaje.get("anime", [])
+            if not anime_appearance:
+                continue
+
+            parsed = urlparse(character_url)
+            try:
+                char_id = int(parsed.path.strip("/").split("/")[-1])
+            except:
+                continue
+
+            try:
+                char_info = jikan.character(char_id)
+                genero_raw = char_info.get("data", {}).get("about", "")
+                genero_api = char_info.get("data", {}).get("gender", "Unknown")
+            except:
+                continue
+
+            if genero_api not in ["Male", "Female", "Unknown"]:
+                continue
+
+            genero = "masculino" if genero_api == "Male" else "femenino"
+            serie = anime_appearance[0].get("name", "Desconocida")
+
+            if genero_api in ["Female", "Unknown"]:
+                nsfw_imagen = obtener_imagen_gelbooru(nombre)
+                if not nsfw_imagen:
+                    continue
+                imagen = nsfw_imagen
+
+            rareza = asignar_rareza()
+            insertar_personaje(nombre, genero, imagen, serie, rareza)
+            generados += 1
+            if contar_disponibles() >= objetivo:
+                break
+        current_page += 1
+
+    print(f"✅ Se generaron {generados} personajes nuevos.")
+
+if __name__ == "__main__":
+    crear_db()
+    generar_personajes_objetivo(1000)
