@@ -4,6 +4,12 @@ import sqlite3
 import os
 from utils.helpers import crear_carta_personaje, crear_galeria_personaje, es_admin
 
+intents = discord.Intents.default()
+intents.messages = True
+intents.guilds = True
+
+bot = discord.Bot(intents=intents)
+
 class Characters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -25,7 +31,7 @@ class Characters(commands.Cog):
         conn.close()
         return personajes
 
-    @commands.command()
+    @bot.slash_command(name="info", description="/info <nombre> Muestra la carta de un personaje o todas las cartas de los personajes de una serie.")
     async def info(self, ctx, *, nombre):
         personaje = self.buscar_personaje(nombre)
         if personaje:
@@ -44,7 +50,7 @@ class Characters(commands.Cog):
             else:
                 await ctx.send("❌ No se encontró ni personaje ni serie con ese nombre.")
 
-    @commands.command()
+    @bot.slash_command(name="galeria", description="/galeria <nombre> Muestra tiempo restante de protección y costo diario.")
     async def galeria(self, ctx, *, nombre):
         personaje = self.buscar_personaje(nombre)
         if personaje:
@@ -57,7 +63,7 @@ class Characters(commands.Cog):
         else:
             await ctx.send("❌ Personaje no encontrado.")
 
-    @commands.command()
+    @bot.slash_command(name="setcarta", description="")
     async def setcarta(self, ctx, nombre, url):
         if not es_admin(ctx.author):
             await ctx.send("❌ No tienes permiso para usar este comando.")
@@ -70,5 +76,6 @@ class Characters(commands.Cog):
         conn.close()
         await ctx.send(f"✅ Imagen de carta del personaje `{nombre}` actualizada.")
 
-async def setup(bot):
-    await bot.add_cog(Characters(bot))
+def setup(bot: discord.Bot):
+    print("✅ Characters cargado")
+    bot.add_cog(Characters(bot))
