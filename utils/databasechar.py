@@ -55,14 +55,22 @@ def insertar_personaje(nombre, genero, imagen, serie, rareza):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     precio = PRECIOS_BASE[rareza]
+    
+    print(f"Verificando si el personaje {nombre} ya existe en la base de datos...")
+
     c.execute("SELECT * FROM personajes WHERE nombre = ?", (nombre,))
     if c.fetchone():
+        print(f"El personaje {nombre} ya existe, no se insertará.")
         conn.close()
         return
+    
+    print(f"Insertando el personaje {nombre} en la base de datos...")
+
     c.execute("INSERT INTO personajes (nombre, genero, carta, nsfw, serie, rareza, precio_base, precio_actual) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
               (nombre, genero, imagen, genero != "masculino", serie, rareza, precio, precio))
     conn.commit()
     conn.close()
+
 
 def asignar_rareza():
     total = sum(p for _, p in RAREZAS)
@@ -150,12 +158,17 @@ def generar_personajes_objetivo(objetivo=1000):
                 imagen = nsfw_imagen
 
             rareza = asignar_rareza()
+            
+            # Imprime los datos antes de insertarlos para asegurarte de que todo es correcto
+            print(f"Insertando personaje: {nombre}, {genero}, {imagen}, {serie}, {rareza}")
+            
             insertar_personaje(nombre, genero, imagen, serie, rareza)
             generados += 1
         
         current_page += 1
 
     print(f"✅ Se generaron {generados} personajes nuevos.")
+
 
 def get_available_characters():
     conn = sqlite3.connect(DB_PATH)
