@@ -113,7 +113,7 @@ def obtener_personajes_top(page):
     return []
 
 def generar_personajes_objetivo(objetivo=1000):
-    print(f"🔄 Generando {total_personajes} personajes...")
+    print(f"🔄 Generando {objetivo} personajes...")  # Cambié 'total_personajes' por 'objetivo'
     current_page = 1
     generados = 0
 
