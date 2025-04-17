@@ -4,6 +4,7 @@ import sqlite3
 import os
 from utils.helpers import crear_carta_personaje, crear_galeria_personaje, es_admin
 from utils.databasechar import get_available_characters
+from utils.databasechar import obtener_todos_los_personajes
 
 
 intents = discord.Intents.default()
