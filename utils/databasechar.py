@@ -5,6 +5,20 @@ import time
 
 DB_PATH = "personajes.db"
 
+def precio_por_rareza(rareza):
+    precios = {
+        "SSS": 1000000,
+        "SS": 500000,
+        "S": 250000,
+        "A": 125000,
+        "B": 45000,
+        "C": 15000,
+        "D": 2500,
+        "E": 500,
+    }
+    return precios.get(rareza.upper(), 100)  # Precio por defecto si no se encuentra
+
+
 def crear_base_de_datos():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -16,6 +30,7 @@ def crear_base_de_datos():
             imagen TEXT,
             serie TEXT,
             rareza TEXT,
+            precio INTEGER,
             UNIQUE(nombre, serie)
         )
     ''')
@@ -66,7 +81,7 @@ def generar_personajes(cantidad=10, paginas_max=100):
 
     while personajes_generados < cantidad and pagina <= paginas_max:
         print(f"📄 Página {pagina}")
-        url = f"https://api.jikan.moe/v4/characters?page={pagina}&limit=25"
+        url = f"https://api.jikan.moe/v4/top/characters?page={pagina}&limit=25"
         response = requests.get(url)
 
         if response.status_code != 200:
@@ -88,6 +103,7 @@ def generar_personajes(cantidad=10, paginas_max=100):
             # Obtener detalles para género y serie
             detalles = requests.get(f"https://api.jikan.moe/v4/characters/{mal_id}/full").json()
             genero = obtener_genero_desde_anilist(nombre)
+            time.sleep(2)  # Espera 2 segundos para respetar el rate limit de AniList
             animes = detalles.get("data", {}).get("anime", [])
             serie = animes[0]["anime"]["title"] if animes else "Desconocida"
 
