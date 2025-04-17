@@ -124,3 +124,22 @@ def generar_personajes_objetivo(objetivo=1000):
         current_page += 1
 
     print(f"✅ {generados} personajes generados con éxito.")
+
+def get_available_characters():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT nombre, genero, imagen, serie, rareza FROM personajes")
+    personajes = cursor.fetchall()
+    conn.close()
+
+    # Opcional: convertir a lista de diccionarios si lo prefieres así
+    return [
+        {
+            "nombre": p[0],
+            "genero": p[1],
+            "imagen": p[2],
+            "serie": p[3],
+            "rareza": p[4]
+        }
+        for p in personajes
+    ]
