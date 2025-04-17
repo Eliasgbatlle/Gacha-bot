@@ -187,7 +187,9 @@ def get_available_characters():
             "precio_base": row[4]
         })
     
+    print(f"Personajes disponibles: {personajes}")  # Agregar print aquí para ver los resultados
     return personajes
+
 
 if __name__ == "__main__":
     crear_db()
