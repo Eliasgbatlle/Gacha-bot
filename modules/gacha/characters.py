@@ -111,12 +111,16 @@ class Characters(commands.Cog):
 
     @bot.slash_command(name="personajes", description="Ver una lista de los personajes disponibles para reclamar")
     async def personajes(self, ctx):
-        await ctx.defer()
-        personajes = get_available_characters()
-        print(personajes)  # Verifica los datos aquí
+        personajes = obtener_todos_los_personajes()
         if not personajes:
-            await ctx.respond("No hay personajes disponibles en este momento.")
+            await ctx.respond("No hay personajes disponibles.")
             return
+
+        mensaje = ""
+        for p in personajes:
+            mensaje += f"**{p['nombre']}** - {p['rareza'].capitalize()} - {p['serie']}\n"
+
+        await ctx.respond(mensaje[:2000])  # Discord tiene límite de 2000 caracteres
 
 def setup(bot: discord.Bot):
     print("✅ Characters cargado")
