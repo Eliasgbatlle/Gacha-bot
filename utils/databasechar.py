@@ -170,6 +170,15 @@ def generar_personajes_objetivo(objetivo=1000):
     print(f"✅ Se generaron {generados} personajes nuevos.")
 
 
+def get_available_characters():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM personajes WHERE disponible = 1")  # Asumimos que la columna 'disponible' marca personajes disponibles
+    personajes = cursor.fetchall()
+    conn.close()
+    print(f"Personajes disponibles: {personajes}")  # Agregar print aquí para ver los resultados
+    return personajes
+
 def obtener_todos_los_personajes():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -190,4 +199,3 @@ def obtener_todos_los_personajes():
             "popularidad": personaje[7],
         })
     return personajes_list
-
