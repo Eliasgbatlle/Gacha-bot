@@ -95,14 +95,20 @@ def contar_disponibles():
     conn.close()
     return count
 
+def obtener_personajes_top(page):
+    url = f"https://api.jikan.moe/v4/top/characters?page={page}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json().get("data", [])
+    return []
+
 def generar_personajes_objetivo(objetivo=1000):
-    jikan = Jikan()
     current_page = 1
     generados = 0
 
     while contar_disponibles() < objetivo:
         print(f"🔄 Revisando personajes de la página {current_page}")
-        personajes = jikan.top("characters", page=current_page).get("data", [])
+        personajes = obtener_personajes_top(current_page)
         for personaje in personajes:
             nombre = personaje.get("name")
             character_url = personaje.get("url")
@@ -117,10 +123,12 @@ def generar_personajes_objetivo(objetivo=1000):
             except:
                 continue
 
+            # Usamos la API para obtener más detalles del personaje
             try:
-                char_info = jikan.character(char_id)
-                genero_raw = char_info.get("data", {}).get("about", "")
-                genero_api = char_info.get("data", {}).get("gender", "Unknown")
+                char_info_url = f"https://api.jikan.moe/v4/characters/{char_id}"
+                char_info_response = requests.get(char_info_url)
+                char_info = char_info_response.json().get("data", {})
+                genero_api = char_info.get("gender", "Unknown")
             except:
                 continue
 
@@ -163,8 +171,6 @@ def get_available_characters():
         })
     
     return personajes
-
-
 
 if __name__ == "__main__":
     crear_db()
