@@ -76,6 +76,46 @@ class Characters(commands.Cog):
         conn.close()
         await ctx.send(f"✅ Imagen de carta del personaje `{nombre}` actualizada.")
 
+    @bot.slash_command(name="personajes", description="Ver una lista de los personajes disponibles para reclamar")
+    async def personajes(self, ctx):
+        await ctx.defer()
+        personajes = get_available_characters()
+
+        if not personajes:
+            await ctx.respond("No hay personajes disponibles en este momento.")
+            return
+
+        # Paginamos de a 10
+        per_page = 10
+        pages = [
+            personajes[i:i + per_page] for i in range(0, len(personajes), per_page)
+        ]
+
+        embeds = []
+        for i, page in enumerate(pages):
+            embed = discord.Embed(
+                title=f"📜 Personajes disponibles (Página {i+1}/{len(pages)})",
+                color=discord.Color.purple()
+            )
+            for personaje in page:
+                embed.add_field(
+                    name=f"{personaje['nombre']} ({personaje['rareza']})",
+                    value=f"ID: `{personaje['id']}`\nGénero: **{personaje['genero']}**\nSerie: *{personaje['serie']}*\nPrecio base: **{personaje['precio_base']}**\nPrecio actual: **{personaje['precio_actual']}**\nPopularidad: **{personaje['popularidad']}**",
+                    inline=False
+                )
+            embeds.append(embed)
+
+        current = 0
+        message = await ctx.respond(embed=embeds[current])
+
+        # Si solo hay una página, no hay paginación
+        if len(embeds) == 1:
+            return
+
+        # Reacciones para navegar
+        view = PaginatedView(embeds)
+        await message.edit_original_response(view=view)
+
 def setup(bot: discord.Bot):
     print("✅ Characters cargado")
     bot.add_cog(Characters(bot))
