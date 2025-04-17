@@ -106,10 +106,16 @@ def generar_personajes_objetivo(objetivo=1000):
     current_page = 1
     generados = 0
 
-    while contar_disponibles() < objetivo:
+    while generados < objetivo:
         print(f"🔄 Revisando personajes de la página {current_page}")
         personajes = obtener_personajes_top(current_page)
+        if not personajes:  # Si no hay personajes en la página, detener el ciclo
+            break
+        
         for personaje in personajes:
+            if generados >= objetivo:
+                break
+
             nombre = personaje.get("name")
             character_url = personaje.get("url")
             imagen = personaje.get("images", {}).get("jpg", {}).get("image_url")
@@ -123,7 +129,6 @@ def generar_personajes_objetivo(objetivo=1000):
             except:
                 continue
 
-            # Usamos la API para obtener más detalles del personaje
             try:
                 char_info_url = f"https://api.jikan.moe/v4/characters/{char_id}"
                 char_info_response = requests.get(char_info_url)
@@ -147,8 +152,7 @@ def generar_personajes_objetivo(objetivo=1000):
             rareza = asignar_rareza()
             insertar_personaje(nombre, genero, imagen, serie, rareza)
             generados += 1
-            if contar_disponibles() >= objetivo:
-                break
+        
         current_page += 1
 
     print(f"✅ Se generaron {generados} personajes nuevos.")
