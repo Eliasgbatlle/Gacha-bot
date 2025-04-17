@@ -3,6 +3,8 @@ from discord.ext import commands
 import sqlite3
 import os
 from utils.helpers import crear_carta_personaje, crear_galeria_personaje, es_admin
+from utils.databasechar import get_available_characters
+
 
 intents = discord.Intents.default()
 intents.messages = True

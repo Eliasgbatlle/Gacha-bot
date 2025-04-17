@@ -146,6 +146,26 @@ def generar_personajes_objetivo(objetivo=1000):
 
     print(f"✅ Se generaron {generados} personajes nuevos.")
 
+    def get_available_characters():
+        conn = sqlite3.connect("data/characters.db")
+        c = conn.cursor()
+        c.execute("SELECT nombre, rareza, serie, precio, precio_base FROM personajes WHERE estado = 'disponible'")
+        rows = c.fetchall()
+        conn.close()
+
+        personajes = []
+        for row in rows:
+            personajes.append({
+                "nombre": row[0],
+                "rareza": row[1],
+                "serie": row[2],
+                "precio": row[3],
+                "precio_base": row[4]
+            })
+        
+        return personajes
+
+
 if __name__ == "__main__":
     crear_db()
     generar_personajes_objetivo(1000)
