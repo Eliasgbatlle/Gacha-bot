@@ -12,6 +12,22 @@ intents.guilds = True
 
 bot = discord.Bot(intents=intents)
 
+class PaginatedView(discord.ui.View):
+    def __init__(self, embeds):
+        super().__init__(timeout=60)
+        self.embeds = embeds
+        self.index = 0
+
+    @discord.ui.button(label="⏮️", style=discord.ButtonStyle.secondary)
+    async def previous(self, button, interaction: discord.Interaction):
+        self.index = (self.index - 1) % len(self.embeds)
+        await interaction.response.edit_message(embed=self.embeds[self.index], view=self)
+
+    @discord.ui.button(label="⏭️", style=discord.ButtonStyle.secondary)
+    async def next(self, button, interaction: discord.Interaction):
+        self.index = (self.index + 1) % len(self.embeds)
+        await interaction.response.edit_message(embed=self.embeds[self.index], view=self)
+
 class Characters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
