@@ -118,46 +118,6 @@ def obtener_info_adicional(mal_id):
         print(f"❌ Error al obtener info adicional de personaje {mal_id}: {e}")
         return None, None
 
-def generar_personajes_objetivo(objetivo=1000):
-    print(f"🔄 Generando {objetivo} personajes (máximo 100 páginas)...")
-    generados = 0
-    current_page = 1
-    max_paginas = 100
-
-    while generados < objetivo and current_page <= max_paginas:
-        print(f"📄 Página {current_page}")
-        personajes = obtener_personajes_top(current_page)
-        if not personajes:
-            print(f"🔴 No se encontraron personajes en la página {current_page}.")
-            break
-
-        for personaje in personajes:
-            if generados >= objetivo:
-                break
-
-            nombre = personaje.get("name")
-            imagen = personaje.get("image")
-            mal_id = personaje.get("mal_id")
-            if not (nombre and imagen and mal_id):
-                continue
-
-            genero_api, serie = obtener_info_adicional(mal_id)
-            if genero_api not in ["Male", "Female", "Unknown"]:
-                continue
-
-            genero = "masculino" if genero_api == "Male" else "femenino"
-
-            rareza = asignar_rareza()
-            print(f"📥 Insertando personaje: {nombre}, {genero}, {serie}, rareza: {rareza}")
-            insertar_personaje(nombre, genero, imagen, serie, rareza)
-            generados += 1
-
-            time.sleep(0.5)  # Para evitar sobrecargar la API (máx 3 req/seg)
-
-        current_page += 1
-
-    print(f"✅ {generados} personajes generados con éxito.")
-
 def get_available_characters():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
