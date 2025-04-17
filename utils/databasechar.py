@@ -23,21 +23,21 @@ def crear_base_de_datos():
     conn.close()
     print("✅ Base de datos creada con éxito.")
 
-def asignar_rareza():
-    chance = random.random()
-    if chance < 0.01:
+def asignar_rareza(rank=1, total=1000):
+    posicion = rank / total
+    if posicion <= 0.01:
         return "SSS"
-    elif chance < 0.03:
+    elif posicion <= 0.03:
         return "SS"
-    elif chance < 0.05:
+    elif posicion <= 0.05:
         return "S"
-    elif chance < 0.07:
+    elif posicion <= 0.07:
         return "A"
-    elif chance < 0.12:
+    elif posicion <= 0.12:
         return "B"
-    elif chance < 0.18:
+    elif posicion <= 0.18:
         return "C"
-    elif chance < 0.24:
+    elif posicion <= 0.24:
         return "D"
     else:
         return "E"
@@ -91,7 +91,7 @@ def generar_personajes(cantidad=10, paginas_max=100):
             animes = detalles.get("data", {}).get("anime", [])
             serie = animes[0]["anime"]["title"] if animes else "Desconocida"
 
-            rareza = clasificar_rareza()
+            rareza = asignar_rareza(rank=personajes_generados + 1, total=cantidad)
 
             insertar_personaje(nombre, genero, imagen, serie, rareza)
             personajes_generados += 1
