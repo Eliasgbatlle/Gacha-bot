@@ -1,7 +1,6 @@
 import sqlite3
 import os
 import random
-from jikanpy import Jikan
 from urllib.parse import urlparse
 import requests
 
