@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from utils.databasechar import crear_base_de_datos, generar_personajes
 
 crear_base_de_datos()
-generar_personajes(10) 
+generar_personajes(100) 
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
