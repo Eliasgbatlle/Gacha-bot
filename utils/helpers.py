@@ -14,6 +14,7 @@ os.makedirs(FOLDER_CARTAS, exist_ok=True)
 os.makedirs(FOLDER_GALERIAS, exist_ok=True)
 
 async def crear_carta_personaje(nombre):
+    print(f"🔄 Creando carta para el personaje: {nombre}")  # Log de creación de carta
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT nombre, genero, carta, rareza, precio_base, precio_actual, serie, popularidad FROM personajes WHERE LOWER(nombre) = ?", (nombre.lower(),))
@@ -21,6 +22,7 @@ async def crear_carta_personaje(nombre):
     conn.close()
 
     if not data:
+        print(f"❌ No se encontró el personaje: {nombre}")  # Log de no encontrado
         return None
 
     nombre, genero, url_img, rareza, precio_base, precio_actual, serie, popularidad = data
@@ -28,6 +30,7 @@ async def crear_carta_personaje(nombre):
     async with aiohttp.ClientSession() as session:
         async with session.get(url_img) as resp:
             if resp.status != 200:
+                print(f"❌ No se pudo descargar la imagen del personaje: {nombre}")  # Log de error de descarga
                 return None
             bg = Image.open(BytesIO(await resp.read())).convert("RGBA")
 
@@ -44,9 +47,12 @@ async def crear_carta_personaje(nombre):
     filepath = f"{FOLDER_CARTAS}/{nombre.lower().replace(' ', '_')}.png"
     bg.save(filepath)
 
+    print(f"✅ Carta creada y guardada en {filepath}")  # Log de éxito
+
     return filepath
 
 async def crear_galeria_personaje(nombre):
+    print(f"🔄 Creando galería para el personaje: {nombre}")  # Log de creación de galería
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT galeria FROM personajes WHERE LOWER(nombre) = ?", (nombre.lower(),))
@@ -54,6 +60,7 @@ async def crear_galeria_personaje(nombre):
     conn.close()
 
     if not data:
+        print(f"❌ No se encontró galería para el personaje: {nombre}")  # Log de no encontrado
         return None
 
     galeria_urls = data[0].split(";") if data[0] else []
@@ -64,6 +71,7 @@ async def crear_galeria_personaje(nombre):
         embed.set_image(url=url)
         embeds.append(embed)
 
+    print(f"✅ Galería creada con {len(embeds)} imágenes.")  # Log de éxito
     return embeds
 
 async def es_admin(ctx):
