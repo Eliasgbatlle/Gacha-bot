@@ -3,6 +3,7 @@ import os
 import random
 from urllib.parse import urlparse
 import requests
+import time  # Asegúrate de importar el módulo time al principio de tu archivo
 
 DB_PATH = "utils/characters.db"
 
@@ -108,12 +109,18 @@ def contar_disponibles():
 def obtener_personajes_top(page=1):
     url = f"https://api.jikan.moe/v4/characters?page={page}"
     response = requests.get(url)
+    
     if response.status_code == 200:
         data = response.json()
-        print(f"🔍 Respuesta de la API para la página {page}: {data}")  # Log de la respuesta completa de la API
+        print(f"🔍 Respuesta de la API para la página {page}: {data}")
+        time.sleep(0.2)  # Pausa de 0.2 segundos entre solicitudes para cumplir con el límite de 3 por segundo
         return data.get("data", [])
+    elif response.status_code == 429:
+        print(f"❌ Error 429: Demasiadas solicitudes. Esperando 30 segundos...")
+        time.sleep(30)  # Espera 30 segundos si se alcanza el límite por minuto
+        return obtener_personajes_top(page)  # Reintenta la misma página
     else:
-        print(f"❌ Error en la solicitud a la API para la página {page}: {response.status_code}")  # Log de error en la API
+        print(f"❌ Error en la solicitud a la API para la página {page}: {response.status_code}")
         return []
 
 
