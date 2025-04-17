@@ -172,20 +172,9 @@ def generar_personajes_objetivo(objetivo=1000):
 
 def get_available_characters():
     conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT nombre, rareza, serie, precio_actual, precio_base FROM personajes WHERE estado = 'disponible'")
-    rows = c.fetchall()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM personajes WHERE disponible = 1")  # Asumimos que la columna 'disponible' marca personajes disponibles
+    personajes = cursor.fetchall()
     conn.close()
-
-    personajes = []
-    for row in rows:
-        personajes.append({
-            "nombre": row[0],
-            "rareza": row[1],
-            "serie": row[2],
-            "precio": row[3],
-            "precio_base": row[4]
-        })
-    
     print(f"Personajes disponibles: {personajes}")  # Agregar print aquí para ver los resultados
     return personajes
