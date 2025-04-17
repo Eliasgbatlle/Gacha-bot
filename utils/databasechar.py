@@ -26,49 +26,82 @@ def crear_base_de_datos():
 def asignar_rareza():
     chance = random.random()
     if chance < 0.01:
-        return "legendario"
+        return "SSS"
+    elif chance < 0.03:
+        return "SS"
     elif chance < 0.05:
-        return "épico"
-    elif chance < 0.20:
-        return "raro"
+        return "S"
+    elif chance < 0.07:
+        return "A"
+    elif chance < 0.12:
+        return "B"
+    elif chance < 0.18:
+        return "C"
+    elif chance < 0.24:
+        return "D"
     else:
-        return "común"
+        return "E"
 
+# Insertar personaje solo si no existe
 def insertar_personaje(nombre, genero, imagen, serie, rareza):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    try:
-        cursor.execute('''
-            INSERT OR IGNORE INTO personajes (nombre, genero, imagen, serie, rareza)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (nombre, genero, imagen, serie, rareza))
-        conn.commit()
-    except Exception as e:
-        print(f"❌ Error al insertar personaje {nombre}: {e}")
-    finally:
+    conn = sqlite3.connect("personajes.db")
+    c = conn.cursor()
+    c.execute("SELECT * FROM personajes WHERE nombre = ?", (nombre,))
+    if c.fetchone():
+        print(f"⚠️ Personaje ya existe: {nombre}, saltando...")
         conn.close()
+        return
 
-def obtener_personajes_top(pagina):
-    url = f"https://api.jikan.moe/v4/top/characters?page={pagina}"
-    response = requests.get(url)
-    if response.status_code != 200:
-        print(f"❌ Error al obtener personajes en página {pagina}: {response.status_code}")
-        return []
-    
-    data = response.json()
-    personajes = data.get("data", [])
-    
-    print(f"🔍 Página {pagina} - personajes obtenidos: {len(personajes)}")
+    c.execute("INSERT INTO personajes (nombre, genero, imagen, serie, rareza) VALUES (?, ?, ?, ?, ?)",
+              (nombre, genero, imagen, serie, rareza))
+    conn.commit()
+    conn.close()
+    print(f"📥 Insertando personaje: {nombre}, {genero}, {serie}, rareza: {rareza}")
 
-    return [
-        {
-            "mal_id": p.get("mal_id"),
-            "url": p.get("url"),
-            "name": p.get("name"),
-            "image": p.get("images", {}).get("jpg", {}).get("image_url")
-        }
-        for p in personajes
-    ]
+# Obtener personajes de Jikan API y guardarlos
+def generar_personajes(cantidad=10, paginas_max=100):
+    print(f"🔄 Generando {cantidad} personajes (máximo {paginas_max} páginas)...")
+    personajes_generados = 0
+    pagina = 1
+
+    while personajes_generados < cantidad and pagina <= paginas_max:
+        print(f"📄 Página {pagina}")
+        url = f"https://api.jikan.moe/v4/characters?page={pagina}&limit=25"
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            print(f"❌ Error al obtener personajes: {response.status_code}")
+            break
+
+        datos = response.json()
+        personajes = datos.get("data", [])
+        print(f"🔍 Página {pagina} - personajes obtenidos: {len(personajes)}")
+
+        for personaje in personajes:
+            if personajes_generados >= cantidad:
+                break
+
+            nombre = personaje["name"]
+            imagen = personaje.get("images", {}).get("jpg", {}).get("image_url", "")
+            mal_id = personaje["mal_id"]
+
+            # Obtener detalles para género y serie
+            detalles = requests.get(f"https://api.jikan.moe/v4/characters/{mal_id}/full").json()
+            genero = detalles.get("data", {}).get("gender", "Desconocido").lower()
+            animes = detalles.get("data", {}).get("anime", [])
+            serie = animes[0]["anime"]["title"] if animes else "Desconocida"
+
+            rareza = clasificar_rareza()
+
+            insertar_personaje(nombre, genero, imagen, serie, rareza)
+            personajes_generados += 1
+
+            # Respetar el rate limit de la API
+            time.sleep(0.5)
+
+        pagina += 1
+
+    print(f"✅ {personajes_generados} personajes generados con éxito.")
 
 def obtener_info_adicional(mal_id):
     url = f"https://api.jikan.moe/v4/characters/{mal_id}/full"
@@ -133,6 +166,24 @@ def get_available_characters():
     conn.close()
 
     # Opcional: convertir a lista de diccionarios si lo prefieres así
+    return [
+        {
+            "nombre": p[0],
+            "genero": p[1],
+            "imagen": p[2],
+            "serie": p[3],
+            "rareza": p[4]
+        }
+        for p in personajes
+    ]
+
+# Devolver todos los personajes para usarlos en comandos
+def obtener_todos_los_personajes():
+    conn = sqlite3.connect("personajes.db")
+    c = conn.cursor()
+    c.execute("SELECT nombre, genero, imagen, serie, rareza FROM personajes")
+    personajes = c.fetchall()
+    conn.close()
     return [
         {
             "nombre": p[0],
