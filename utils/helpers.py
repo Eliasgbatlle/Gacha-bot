@@ -13,43 +13,42 @@ FOLDER_GALERIAS = "data/galeria"
 os.makedirs(FOLDER_CARTAS, exist_ok=True)
 os.makedirs(FOLDER_GALERIAS, exist_ok=True)
 
-async def crear_carta_personaje(nombre):
-    print(f"🔄 Creando carta para el personaje: {nombre}")  # Log de creación de carta
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT nombre, genero, carta, rareza, precio_base, precio_actual, serie, popularidad FROM personajes WHERE LOWER(nombre) = ?", (nombre.lower(),))
-    data = c.fetchone()
-    conn.close()
+async def crear_carta_personaje(personaje):
+    # Desempaquetamos la tupla
+    id, nombre, genero, imagen_url, serie, rareza, carta = personaje
 
-    if not data:
-        print(f"❌ No se encontró el personaje: {nombre}")  # Log de no encontrado
-        return None
-
-    nombre, genero, url_img, rareza, precio_base, precio_actual, serie, popularidad = data
-
+    print(f"🖼️ Descargando imagen del personaje: {nombre}")
     async with aiohttp.ClientSession() as session:
-        async with session.get(url_img) as resp:
+        async with session.get(imagen_url) as resp:
             if resp.status != 200:
-                print(f"❌ No se pudo descargar la imagen del personaje: {nombre}")  # Log de error de descarga
-                return None
-            bg = Image.open(BytesIO(await resp.read())).convert("RGBA")
+                raise Exception("No se pudo descargar la imagen del personaje.")
+            img_bytes = await resp.read()
 
-    # Redimensionar y superponer la carta (tipo carta de Pokémon)
-    bg = bg.resize((500, 700))
-    draw = ImageDraw.Draw(bg)
-    font = ImageFont.truetype("arial.ttf", 30)
+    # Crear imagen base
+    img = Image.new("RGBA", (512, 768), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(img)
 
-    # Texto básico sobre la imagen
-    draw.rectangle([0, 650, 500, 700], fill=(0, 0, 0, 200))
-    draw.text((10, 655), f"{nombre} ({rareza})", font=font, fill="white")
-    draw.text((10, 685), f"{serie} | ${precio_actual} | Pop: {popularidad}", font=font, fill="white")
+    # Cargar imagen del personaje
+    personaje_img = Image.open(BytesIO(img_bytes)).convert("RGBA")
+    personaje_img = personaje_img.resize((512, 512))
+    img.paste(personaje_img, (0, 0))
 
-    filepath = f"{FOLDER_CARTAS}/{nombre.lower().replace(' ', '_')}.png"
-    bg.save(filepath)
+    # Texto
+    fuente_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # Cambia si querés una fuente anime
+    font = ImageFont.truetype(fuente_path, 24)
 
-    print(f"✅ Carta creada y guardada en {filepath}")  # Log de éxito
+    draw.rectangle([(0, 512), (512, 768)], fill=(0, 0, 0, 180))  # Fondo del texto
 
-    return filepath
+    draw.text((10, 520), f"Nombre: {nombre}", fill="white", font=font)
+    draw.text((10, 560), f"Rareza: {rareza}", fill="white", font=font)
+    draw.text((10, 600), f"Género: {genero}", fill="white", font=font)
+    draw.text((10, 640), f"Serie: {serie}", fill="white", font=font)
+
+    # Guardar imagen
+    path = f"/tmp/carta_{id}.png"
+    img.save(path)
+    print(f"✅ Carta creada en: {path}")
+    return path
 
 async def crear_galeria_personaje(nombre):
     print(f"🔄 Creando galería para el personaje: {nombre}")  # Log de creación de galería
