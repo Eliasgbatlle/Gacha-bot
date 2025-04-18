@@ -31,7 +31,7 @@ class PaginatedView(discord.ui.View):
 class Characters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = "personaje.db"
+        self.db_path = "personajes.db"
 
     def buscar_personaje(self, nombre):
         print(f"🔄 Buscando personaje: {nombre}")  # Log de búsqueda
@@ -64,12 +64,12 @@ class Characters(commands.Cog):
 
         return personajes
 
-    @bot.slash_command(name="info", description="/info <nombre> Muestra la carta de un personaje o todas las cartas de los personajes de una serie.")
+    @bot.slash_command(name="info", description="Muestra la carta de un personaje o todas las cartas de los personajes de una serie.")
     async def info(self, ctx, *, nombre):
         personaje = self.buscar_personaje(nombre)
         if personaje:
             # Mostrar info del personaje con carta
-            carta_path = crear_carta_personaje(personaje)
+            carta_path = await crear_carta_personaje(personaje)
             file = discord.File(carta_path, filename="carta.png")
             await ctx.send(file=file)
         else:
@@ -77,13 +77,14 @@ class Characters(commands.Cog):
             if personajes:
                 await ctx.send(f"Serie encontrada: {nombre}. Enviando cartas de personajes...")
                 for personaje in personajes:
-                    carta_path = crear_carta_personaje(personaje)
+                    carta_path = await crear_carta_personaje(personaje)
                     file = discord.File(carta_path, filename="carta.png")
                     await ctx.send(file=file)
+
             else:
                 await ctx.send("❌ No se encontró ni personaje ni serie con ese nombre.")
 
-    @bot.slash_command(name="galeria", description="/galeria <nombre> Muestra tiempo restante de protección y costo diario.")
+    @bot.slash_command(name="galeria", description="Muestra tiempo restante de protección y costo diario.")
     async def galeria(self, ctx, *, nombre):
         personaje = self.buscar_personaje(nombre)
         if personaje:
