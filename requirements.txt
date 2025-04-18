@@ -2,3 +2,6 @@ py-cord
 python-dotenv
 requests
 Pillow
+playwright
+ffmpeg
+pyppeteer

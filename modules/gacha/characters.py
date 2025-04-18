@@ -5,6 +5,7 @@ import os
 from utils.helpers import crear_carta_personaje, crear_galeria_personaje, es_admin
 from utils.databasechar import get_available_characters
 from utils.databasechar import obtener_todos_los_personajes
+from utils.helpers import generar_tarjeta_html
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -69,7 +70,7 @@ class Characters(commands.Cog):
         personaje = self.buscar_personaje(nombre)
         if personaje:
             # Mostrar info del personaje con carta
-            carta_path = await crear_carta_personaje(personaje)
+            carta_path = await crear_carta_personaje(personaje[1])
             file = discord.File(carta_path, filename="carta.png")
             await ctx.send(file=file)
         else:
@@ -112,26 +113,45 @@ class Characters(commands.Cog):
 
     @bot.slash_command(name="personajes", description="Ver una lista de los personajes disponibles para reclamar")
     async def personajes(self, ctx):
+        # Obtener los personajes
         personajes = obtener_todos_los_personajes()
         if not personajes:
             await ctx.respond("No hay personajes disponibles.")
             return
 
+        # Crear las páginas para los personajes
         personajes_por_pagina = 10
         embeds = []
-
+        
         for i in range(0, len(personajes), personajes_por_pagina):
             pagina = personajes[i:i+personajes_por_pagina]
+
             embed = discord.Embed(
                 title=f"Lista de personajes (pág. {i//personajes_por_pagina + 1})",
                 color=discord.Color.blurple()
             )
+            
             for p in pagina:
                 embed.add_field(name=p['nombre'], value=f"{p['rareza'].capitalize()} - {p['serie']}", inline=False)
+            
             embeds.append(embed)
 
+        # Solo validamos el primer embed, ya que solo ese se responde directamente
+        first_embed = embeds[0].to_dict()
+        length = len(first_embed.get('title', '')) + len(first_embed.get('description', ''))
+        for field in first_embed.get('fields', []):
+            length += len(field['name']) + len(field['value'])
+
+        if length > 2000:
+            await ctx.respond("La primera página de personajes es demasiado larga para mostrar.")
+            return
+
+
+        # Usa PaginatedView para manejar la paginación
         view = PaginatedView(embeds)
         await ctx.respond(embed=embeds[0], view=view)
+
+
 
 def setup(bot: discord.Bot):
     print("✅ Characters cargado")

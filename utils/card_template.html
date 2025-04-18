@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Carta Gacha</title>
+  <style>
+    body {
+      background: rgba(0, 0, 0, 0); /* Fondo completamente transparente */
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .carta-container {
+      position: relative;
+    }
+
+    .sombra-arcoiris,
+    .sombra-solida {
+      content: "";
+      position: absolute;
+      top: -30px;
+      left: -30px;
+      right: -30px;
+      bottom: -30px;
+      border-radius: 35px;
+      filter: blur(40px);
+      z-index: 0;
+    }
+
+    .sombra-arcoiris {
+      background: linear-gradient(135deg, red, orange, yellow, green, blue, indigo, violet, red);
+      background-size: 400% 400%;
+      animation: arcoirisFluido 10s linear infinite;
+    }
+
+    .sombra-solida {
+      animation: respiro 3s ease-in-out infinite;
+    }
+
+    .sombra-A { background: gold; }
+    .sombra-B { background: #5a0099; }
+    .sombra-C { background: #3399ff; }
+    .sombra-D { background: #00ff00; }
+    .sombra-D { background: gray; }
+
+    @keyframes arcoirisFluido {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
+    }
+
+    @keyframes respiro {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    .carta {
+      border: 2px solid white;
+      position: relative;
+      width: 350px;
+      height: 500px;
+      background-image: url('[COLOCAR URL]');
+      background-size: cover;
+      background-position: center;
+      border-radius: 25px;
+      overflow: hidden;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+      z-index: 1;
+    }
+
+    .degradado {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 35%;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+    }
+
+    .rareza {
+      position: absolute;
+      bottom: 12%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 40px;
+      font-weight: bold;
+      font-family: 'Arial Black', sans-serif;
+      text-shadow: 1px 1px 100px black;
+      z-index: 2;
+    }
+
+    .info {
+      position: absolute;
+      bottom: 6.4%;
+      width: 100%;
+      text-align: center;
+      color: rgb(0, 0, 0);
+      font-family: Arial, sans-serif;
+      z-index: 2;
+    }
+
+    .info .nombre {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .SSS {
+      color: transparent;
+      background: linear-gradient(45deg, red, orange, yellow, lime, cyan, indigo, violet, red);
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: arcoiris 4s linear infinite;
+    }
+
+    .SS { color: gold; }
+    .S { color: silver; }
+    .E { color: gray; }
+
+    @keyframes arcoiris {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+
+    .cromado-A {
+      color: transparent;
+      background: linear-gradient(135deg, #fff8d6, #d4af37, #ffe680, #a67c00, #fff8d6);
+      background-size: 200% 200%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: brilloCromado 4s ease-in-out infinite;
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+    }
+
+    .cromado-B {
+      color: transparent;
+      background: linear-gradient(135deg, #f2e6ff, #a64dff, #5a0099, #cc80ff, #f2e6ff);
+      background-size: 200% 200%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: brilloCromado 4s ease-in-out infinite;
+      text-shadow: 0 0 8px rgba(166, 77, 255, 0.5);
+    }
+
+    .cromado-C {
+      color: transparent;
+      background: linear-gradient(135deg, #e0f0ff, #3399ff, #003366, #66ccff, #e0f0ff);
+      background-size: 200% 200%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: brilloCromado 4s ease-in-out infinite;
+      text-shadow: 0 0 8px rgba(51, 153, 255, 0.5);
+    }
+
+    .cromado-D {
+      color: transparent;
+      background: linear-gradient(135deg, #e0fff4, #00d48c, #008b6f, #00ffd9, #e0fff4);
+      background-size: 200% 200%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: brilloCromado 4s ease-in-out infinite;
+      text-shadow: 0 0 8px rgba(0, 212, 140, 0.4);
+    }
+
+    .cromado-E {
+      color: transparent;
+      background: linear-gradient(135deg, #ffffff, #c0c0c0, #dcdcdc, #a9a9a9, #ffffff);
+      background-size: 200% 200%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: brilloCromado 4s ease-in-out infinite;
+      text-shadow: 0 0 8px rgba(192, 192, 192, 0.4);
+    }
+
+    @keyframes brilloCromado {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .marco {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+      border-radius: 25px;
+    }
+  </style>
+</head>
+<body>
+  <div class="carta-container">
+    <img src="https://i.imgur.com/eYrlVpZ.png" class="marco" alt="marco">
+    <div class="sombra-arcoiris"></div>
+    <div class="sombra-solida sombra-[COLOCAR rareza]"></div>
+    <div class="carta">
+      <div class="degradado"></div>
+      <div class="rareza cromado-[COLOCAR rareza]">[COLOCAR rareza]</div> 
+    </div>
+    <div class="info">
+      <div class="nombre">[Nombre]</div> 
+    </div>
+  </div>
+</body>
+</html>

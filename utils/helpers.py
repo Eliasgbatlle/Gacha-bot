@@ -4,8 +4,10 @@ import aiohttp
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import discord
+import asyncio
+from pyppeteer import launch
 
-DB_PATH = "database.db"
+DB_PATH = "personajes.db"
 FOLDER_CARTAS = "data/cartas"
 FOLDER_GALERIAS = "data/galeria"
 
@@ -13,42 +15,84 @@ FOLDER_GALERIAS = "data/galeria"
 os.makedirs(FOLDER_CARTAS, exist_ok=True)
 os.makedirs(FOLDER_GALERIAS, exist_ok=True)
 
-async def crear_carta_personaje(personaje):
-    # Desempaquetamos la tupla
+
+
+# Ruta a tu plantilla HTML
+PLANTILLA_HTML = "utils/plantilla_tarjeta.html"
+
+async def generar_tarjeta_html(personaje):
     id, nombre, genero, imagen_url, serie, rareza, carta = personaje
 
-    print(f"🖼️ Descargando imagen del personaje: {nombre}")
-    async with aiohttp.ClientSession() as session:
-        async with session.get(imagen_url) as resp:
-            if resp.status != 200:
-                raise Exception("No se pudo descargar la imagen del personaje.")
-            img_bytes = await resp.read()
+    # Leer plantilla y reemplazar valores
+    with open(PLANTILLA_HTML, "r", encoding="utf-8") as f:
+        html = f.read()
 
-    # Crear imagen base
-    img = Image.new("RGBA", (512, 768), (255, 255, 255, 255))
-    draw = ImageDraw.Draw(img)
+    html = html.replace("[NOMBRE]", nombre)
+    html = html.replace("[GENERO]", genero)
+    html = html.replace("[IMAGEN_URL]", imagen_url)
+    html = html.replace("[SERIE]", serie)
+    html = html.replace("[RAREZA]", rareza.upper())
 
-    # Cargar imagen del personaje
-    personaje_img = Image.open(BytesIO(img_bytes)).convert("RGBA")
-    personaje_img = personaje_img.resize((512, 512))
-    img.paste(personaje_img, (0, 0))
+    # Guardar HTML temporal
+    temp_html_path = f"/tmp/tarjeta_{id}.html"
+    with open(temp_html_path, "w", encoding="utf-8") as f:
+        f.write(html)
 
-    # Texto
-    fuente_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # Cambia si querés una fuente anime
-    font = ImageFont.truetype(fuente_path, 24)
+    # Lanzar navegador sin cabeza con pyppeteer para renderizar el HTML como imagen
+    browser = await launch(args=["--no-sandbox"])
+    page = await browser.newPage()
+    await page.setViewport({"width": 512, "height": 768})
+    await page.goto(f"file://{temp_html_path}")
+    await asyncio.sleep(0.5)  # Pequeña pausa para cargar bien el CSS/imágenes
 
-    draw.rectangle([(0, 512), (512, 768)], fill=(0, 0, 0, 180))  # Fondo del texto
+    output_path = f"/tmp/tarjeta_{id}.png"
+    await page.screenshot({"path": output_path})
+    await browser.close()
 
-    draw.text((10, 520), f"Nombre: {nombre}", fill="white", font=font)
-    draw.text((10, 560), f"Rareza: {rareza}", fill="white", font=font)
-    draw.text((10, 600), f"Género: {genero}", fill="white", font=font)
-    draw.text((10, 640), f"Serie: {serie}", fill="white", font=font)
+    return output_path
 
-    # Guardar imagen
-    path = f"/tmp/carta_{id}.png"
-    img.save(path)
-    print(f"✅ Carta creada en: {path}")
-    return path
+async def crear_carta_personaje(nombre):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT nombre, genero, carta, rareza, precio_base, precio_actual, serie, popularidad FROM personajes WHERE LOWER(nombre) = ?", (nombre.lower(),))
+    data = c.fetchone()
+    conn.close()
+
+    if not data:
+        return None
+
+    nombre, genero, url_img, rareza, precio_base, precio_actual, serie, popularidad = data
+
+    # Validar la URL de la imagen
+    if not isinstance(url_img, str) or not url_img.startswith("http"):
+        print(f"URL de imagen no válida para {nombre}, usando imagen predeterminada.")
+        url_img = "ruta/a/imagen/predeterminada.png"  # Reemplazar con la ruta de una imagen predeterminada
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url_img) as resp:
+                if resp.status != 200:
+                    print(f"❌ No se pudo obtener la imagen para {nombre}. Status: {resp.status}")
+                    return None
+                bg = Image.open(BytesIO(await resp.read())).convert("RGBA")
+    except Exception as e:
+        print(f"Error al obtener la imagen para {nombre}: {e}")
+        return None
+
+    # Redimensionar y superponer la carta (tipo carta de Pokémon)
+    bg = bg.resize((500, 700))
+    draw = ImageDraw.Draw(bg)
+    font = ImageFont.truetype("arial.ttf", 30)
+
+    # Texto básico sobre la imagen
+    draw.rectangle([0, 650, 500, 700], fill=(0, 0, 0, 200))
+    draw.text((10, 655), f"{nombre} ({rareza})", font=font, fill="white")
+    draw.text((10, 685), f"{serie} | ${precio_actual} | Pop: {popularidad}", font=font, fill="white")
+
+    filepath = f"{FOLDER_CARTAS}/{nombre.lower().replace(' ', '_')}.png"
+    bg.save(filepath)
+
+    return filepath
 
 async def crear_galeria_personaje(nombre):
     print(f"🔄 Creando galería para el personaje: {nombre}")  # Log de creación de galería
