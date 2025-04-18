@@ -69,21 +69,24 @@ class Characters(commands.Cog):
     async def info(self, ctx, *, nombre):
         personaje = self.buscar_personaje(nombre)
         if personaje:
-            # Mostrar info del personaje con carta
-            carta_path = await crear_carta_personaje(personaje[1])
-            file = discord.File(carta_path, filename="carta.png")
-            await ctx.send(file=file)
+            carta_path = await crear_carta_personaje(personaje[1])  # <- personaje[1] es el nombre
+            if carta_path:
+                file = discord.File(carta_path, filename="carta.png")
+                await ctx.send(file=file)
+            else:
+                await ctx.send("❌ No se pudo generar la carta del personaje.")
         else:
             personajes = self.buscar_por_serie(nombre)
             if personajes:
-                await ctx.send(f"Serie encontrada: {nombre}. Enviando cartas de personajes...")
+                await ctx.send(f"📦 Serie encontrada: {nombre}. Enviando cartas de personajes...")
                 for personaje in personajes:
-                    carta_path = await crear_carta_personaje(personaje)
-                    file = discord.File(carta_path, filename="carta.png")
-                    await ctx.send(file=file)
-
+                    carta_path = await crear_carta_personaje(personaje[1])  # <- nombre
+                    if carta_path:
+                        file = discord.File(carta_path, filename="carta.png")
+                        await ctx.send(file=file)
             else:
                 await ctx.send("❌ No se encontró ni personaje ni serie con ese nombre.")
+
 
     @bot.slash_command(name="galeria", description="Muestra tiempo restante de protección y costo diario.")
     async def galeria(self, ctx, *, nombre):

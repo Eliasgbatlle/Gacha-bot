@@ -6,6 +6,7 @@ from io import BytesIO
 import discord
 import asyncio
 from pyppeteer import launch
+from PIL import ImageFont
 
 DB_PATH = "personajes.db"
 FOLDER_CARTAS = "data/cartas"
@@ -54,23 +55,25 @@ async def generar_tarjeta_html(personaje):
 async def crear_carta_personaje(nombre):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT nombre, genero, carta, rareza, precio_base, precio_actual, serie, popularidad FROM personajes WHERE LOWER(nombre) = ?", (nombre.lower(),))
+    c.execute("SELECT id, nombre, genero, imagen, serie, rareza FROM personajes WHERE LOWER(nombre) = ?", (nombre.lower(),))
     data = c.fetchone()
     conn.close()
 
     if not data:
         return None
 
-    nombre, genero, url_img, rareza, precio_base, precio_actual, serie, popularidad = data
+    id, nombre, genero, imagen_url, serie, rareza = data
+
 
     # Validar la URL de la imagen
-    if not isinstance(url_img, str) or not url_img.startswith("http"):
+    if not isinstance(imagen_url, str) or not imagen_url.startswith("http"):
         print(f"URL de imagen no válida para {nombre}, usando imagen predeterminada.")
-        url_img = "ruta/a/imagen/predeterminada.png"  # Reemplazar con la ruta de una imagen predeterminada
+        imagen_url = "ruta/a/imagen/predeterminada.png"
+
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url_img) as resp:
+            async with session.get(imagen_url) as resp:
                 if resp.status != 200:
                     print(f"❌ No se pudo obtener la imagen para {nombre}. Status: {resp.status}")
                     return None
@@ -82,7 +85,7 @@ async def crear_carta_personaje(nombre):
     # Redimensionar y superponer la carta (tipo carta de Pokémon)
     bg = bg.resize((500, 700))
     draw = ImageDraw.Draw(bg)
-    font = ImageFont.truetype("arial.ttf", 30)
+    font = ImageFont.load_default()
 
     # Texto básico sobre la imagen
     draw.rectangle([0, 650, 500, 700], fill=(0, 0, 0, 200))
