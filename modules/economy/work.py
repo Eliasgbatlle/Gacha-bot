@@ -94,6 +94,7 @@ class CrimeSystem(commands.Cog):
         return 0.5 + (abs(rep) / 200)  # 50% base + hasta 50% extra
 
     @bot.slash_command(name="trabajar", description="Trabajo normal (para no morir de hambre)")
+    @commands.cooldown(1, 7200, commands.BucketType.user)
     async def work(self, ctx):
         """Trabajo normal (para no morir de hambre)"""
         await self._execute_crime(ctx, self.jobs, is_crime=False)
@@ -105,6 +106,7 @@ class CrimeSystem(commands.Cog):
             await ctx.respond(f"⏳ ¡Estás agotado! Descansa un poco. Podrás trabajar nuevamente en {remaining}")
 
     @bot.slash_command(name="crimen", description="Dinero fácil, consecuencias difíciles")
+    @commands.cooldown(1, 7200, commands.BucketType.user)
     async def crime(self, ctx):
         """Dinero fácil, consecuencias difíciles"""
         await self._execute_crime(ctx, self.crimes, is_crime=True)
@@ -155,6 +157,9 @@ class CrimeSystem(commands.Cog):
         )
         await ctx.respond(embed=embed)
 
+
+
 def setup(bot: discord.Bot):
     print("✅ CrimeSystem cargado")
     bot.add_cog(CrimeSystem(bot))
+    

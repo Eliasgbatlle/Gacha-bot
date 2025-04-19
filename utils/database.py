@@ -18,9 +18,8 @@ class Database:
                     server_id TEXT NOT NULL,
                     coins INTEGER DEFAULT 1000,
                     reputation INTEGER DEFAULT 0,
-                    protection_until TEXT,  -- Fecha en formato ISO (ej: "2025-04-20T12:00:00")
-                    is_jailed BOOLEAN DEFAULT FALSE,
-                    jail_until TEXT,
+                    protection_until TEXT,
+                    last_daily TEXT,
                     PRIMARY KEY (user_id, server_id)
                 )
             """)
@@ -39,6 +38,22 @@ class Database:
                     image_url TEXT  -- URL de la imagen del personaje
                 )
             """)
+
+            # Tabla 'characters' (personajes gacha)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS characters (
+                    character_id TEXT PRIMARY KEY,
+                    owner_id TEXT NOT NULL,
+                    server_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    rarity INTEGER NOT NULL,
+                    value INTEGER NOT NULL,
+                    stolen BOOLEAN DEFAULT FALSE,
+                    protected BOOLEAN DEFAULT TRUE,
+                    image_url TEXT  -- URL de la imagen del personaje
+                )
+            """)
+
             conn.commit()
 
     def get_connection(self):

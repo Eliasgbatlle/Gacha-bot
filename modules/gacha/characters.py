@@ -1,11 +1,10 @@
 import discord
 from discord.ext import commands
 import sqlite3
-import os
-from utils.helpers import crear_carta_personaje, crear_galeria_personaje, es_admin
-from utils.databasechar import get_available_characters
+from utils.helpers import crear_galeria_personaje
 from utils.databasechar import obtener_todos_los_personajes
-from utils.helpers import generar_tarjeta_html
+from discord.commands import default_permissions
+from contextlib import closing
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -14,8 +13,8 @@ intents.guilds = True
 bot = discord.Bot(intents=intents)
 
 class PaginatedView(discord.ui.View):
-    def __init__(self, embeds):
-        super().__init__(timeout=60)
+    def __init__(self, embeds):  # <-- Quita el parámetro timeout aquí
+        super().__init__(timeout=60)  # <-- Pon el timeout aquí directamente
         self.embeds = embeds
         self.index = 0
 
@@ -35,17 +34,22 @@ class Characters(commands.Cog):
         self.db_path = "personajes.db"
 
     def buscar_personaje(self, nombre):
-        print(f"🔄 Buscando personaje: {nombre}")  # Log de búsqueda
+        print(f"🔄 Buscando personaje: {nombre}")
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM personajes WHERE nombre LIKE ?", (f"%{nombre}%",))
+        # Especifica EXPLÍCITAMENTE las columnas que necesitas en el orden correcto
+        cursor.execute("""
+            SELECT id, nombre, genero, imagen, serie, rareza, precio_base, precio_actual, popularidad, carta
+            FROM personajes 
+            WHERE nombre LIKE ?
+        """, (f"%{nombre}%",))
         personaje = cursor.fetchone()
         conn.close()
 
         if personaje:
-            print(f"✅ Personaje encontrado: {nombre}")  # Log de éxito
+            print(f"✅ Personaje encontrado: {nombre}")
         else:
-            print(f"❌ No se encontró el personaje: {nombre}")  # Log de no encontrado
+            print(f"❌ No se encontró el personaje: {nombre}")
 
         return personaje
 
@@ -65,95 +69,52 @@ class Characters(commands.Cog):
 
         return personajes
 
-    @bot.slash_command(name="info", description="Muestra la carta de un personaje o todas las cartas de los personajes de una serie.")
-    async def info(self, ctx, *, nombre):
-        personaje = self.buscar_personaje(nombre)
-        if personaje:
-            carta_path = await crear_carta_personaje(personaje[1])  # <- personaje[1] es el nombre
-            if carta_path:
-                file = discord.File(carta_path, filename="carta.png")
-                await ctx.send(file=file)
-            else:
-                await ctx.send("❌ No se pudo generar la carta del personaje.")
-        else:
-            personajes = self.buscar_por_serie(nombre)
-            if personajes:
-                await ctx.send(f"📦 Serie encontrada: {nombre}. Enviando cartas de personajes...")
-                for personaje in personajes:
-                    carta_path = await crear_carta_personaje(personaje[1])  # <- nombre
-                    if carta_path:
-                        file = discord.File(carta_path, filename="carta.png")
-                        await ctx.send(file=file)
-            else:
-                await ctx.send("❌ No se encontró ni personaje ni serie con ese nombre.")
-
-
-    @bot.slash_command(name="galeria", description="Muestra tiempo restante de protección y costo diario.")
-    async def galeria(self, ctx, *, nombre):
-        personaje = self.buscar_personaje(nombre)
-        if personaje:
-            imagenes = crear_galeria_personaje(personaje)
-            if imagenes:
-                for img in imagenes:
-                    await ctx.send(img)
-            else:
-                await ctx.send("❌ No se encontraron imágenes adicionales para este personaje.")
-        else:
-            await ctx.send("❌ Personaje no encontrado.")
-
-    @bot.slash_command(name="setcarta", description="")
-    async def setcarta(self, ctx, nombre, url):
-        if not es_admin(ctx.author):
-            await ctx.send("❌ No tienes permiso para usar este comando.")
-            return
-
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE personajes SET carta = ? WHERE nombre LIKE ?", (url, f"%{nombre}%"))
-        conn.commit()
-        conn.close()
-        await ctx.send(f"✅ Imagen de carta del personaje `{nombre}` actualizada.")
-
     @bot.slash_command(name="personajes", description="Ver una lista de los personajes disponibles para reclamar")
     async def personajes(self, ctx):
-        # Obtener los personajes
-        personajes = obtener_todos_los_personajes()
-        if not personajes:
-            await ctx.respond("No hay personajes disponibles.")
-            return
-
-        # Crear las páginas para los personajes
-        personajes_por_pagina = 10
-        embeds = []
-        
-        for i in range(0, len(personajes), personajes_por_pagina):
-            pagina = personajes[i:i+personajes_por_pagina]
-
-            embed = discord.Embed(
-                title=f"Lista de personajes (pág. {i//personajes_por_pagina + 1})",
-                color=discord.Color.blurple()
-            )
+        try:
+            await ctx.defer()
             
-            for p in pagina:
-                embed.add_field(name=p['nombre'], value=f"{p['rareza'].capitalize()} - {p['serie']}", inline=False)
+            # 1. Obtener personajes
+            personajes = obtener_todos_los_personajes()
+            if not personajes:
+                return await ctx.followup.send("No hay personajes disponibles.", ephemeral=True)
+
+            # 2. Crear las páginas (embeds)
+            personajes_por_pagina = 10
+            embeds = []  # <-- Definimos la lista de embeds aquí
             
-            embeds.append(embed)
+            for i in range(0, len(personajes), personajes_por_pagina):
+                pagina = personajes[i:i+personajes_por_pagina]
+                embed = discord.Embed(
+                    title=f"Lista de personajes (pág. {i//personajes_por_pagina + 1}/{(len(personajes)-1)//personajes_por_pagina + 1})",  # <-- Cálculo corregido
+                    color=discord.Color.blurple()
+                )
+                
+                for p in pagina:
+                    embed_value = f"• Rareza: {p['rareza'].capitalize()}\n• Serie: {p['serie']}"
+                    embed.add_field(
+                        name=p['nombre'],
+                        value=embed_value,
+                        inline=False
+                    )
+                
+                if len(embed) > 6000:  # Límite de Discord
+                    embed.clear_fields()
+                    embed.description = "⚠️ Demasiados personajes para mostrar"
+                    break
+                    
+                embeds.append(embed)
 
-        # Solo validamos el primer embed, ya que solo ese se responde directamente
-        first_embed = embeds[0].to_dict()
-        length = len(first_embed.get('title', '')) + len(first_embed.get('description', ''))
-        for field in first_embed.get('fields', []):
-            length += len(field['name']) + len(field['value'])
-
-        if length > 2000:
-            await ctx.respond("La primera página de personajes es demasiado larga para mostrar.")
-            return
-
-
-        # Usa PaginatedView para manejar la paginación
-        view = PaginatedView(embeds)
-        await ctx.respond(embed=embeds[0], view=view)
-
+            # 3. Enviar con paginación
+            view = PaginatedView(embeds)
+            await ctx.followup.send(embed=embeds[0], view=view)
+            
+        except Exception as e:
+            print(f"Error en comando /personajes: {e}")
+            if not ctx.response.is_done():
+                await ctx.respond("❌ Error al procesar el comando", ephemeral=True)
+            else:
+                await ctx.followup.send("❌ Ocurrió un error al mostrar los personajes", ephemeral=True)
 
 
 def setup(bot: discord.Bot):
