@@ -46,5 +46,19 @@ class DailyReward(commands.Cog):
 
         await ctx.respond(f"🎉 ¡Recompensa diaria de {total} monedas! (+{bonus} por reputación)")
 
+    @daily.error
+    async def daily_error(self, ctx: discord.ApplicationContext, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            retry_after = timedelta(seconds=error.retry_after)
+            hours, remainder = divmod(retry_after.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            await ctx.respond(
+                f"⏳ Ya reclamaste tu recompensa diaria. Vuelve en {hours} horas, {minutes} minutos y {seconds} segundos.",
+                ephemeral=True
+            )
+        else:
+            # Manejar otros errores si es necesario
+            await ctx.respond("❌ Ocurrió un error al procesar tu comando.", ephemeral=True)
+
 def setup(bot):
     bot.add_cog(DailyReward(bot))

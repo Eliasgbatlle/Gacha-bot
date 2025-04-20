@@ -2,10 +2,10 @@ import discord
 import os
 import json
 from dotenv import load_dotenv
-from utils.databasechar import crear_base_de_datos, generar_personajes
+from utils.databasechar import crear_base_de_datos, generar_personajes, TOTAL_PERSONAJES
 
 crear_base_de_datos()
-generar_personajes(1000) 
+generar_personajes(TOTAL_PERSONAJES) 
 
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
