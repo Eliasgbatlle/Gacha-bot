@@ -88,37 +88,63 @@ class GachaRolls(commands.Cog):
             "D": 0.28,
             "E": 0.3299
         }
-        pool = []
+    
+        # Agrupar personajes por rareza
+        personajes_por_rareza = {rareza: [] for rareza in probabilidades}
         for personaje in personajes:
-            rareza = personaje["rareza"]
+            rareza = personaje["rareza"].upper()  # Convertir a mayúsculas para consistencia
             if rareza in probabilidades:
-                pool.extend([personaje] * int(probabilidades[rareza] * 1000000))
-        return random.choice(pool)
-
+                personajes_por_rareza[rareza].append(personaje)
+    
+        # Generar una lista de rarezas basada en las probabilidades
+        rarezas = list(probabilidades.keys())
+        probabilidades_lista = list(probabilidades.values())
+    
+        # Seleccionar una rareza basada en las probabilidades
+        rareza_seleccionada = random.choices(rarezas, weights=probabilidades_lista, k=1)[0]
+    
+        # Seleccionar un personaje aleatorio dentro de la rareza seleccionada
+        if personajes_por_rareza[rareza_seleccionada]:
+            return random.choice(personajes_por_rareza[rareza_seleccionada])
+    
+        # Si no hay personajes disponibles en la rareza seleccionada, intenta con otra rareza
+        for rareza in rarezas:
+            if personajes_por_rareza[rareza]:
+                return random.choice(personajes_por_rareza[rareza])
+    
+        # Si no hay personajes disponibles en ninguna rareza, retorna None
+        print("⚠️ No hay personajes disponibles en el pool.")
+        return None
+    
     @bot.slash_command(name="girar", description="🎰 Gira la ruleta gacha para obtener un personaje")
     async def roll(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral=False)  # Indicar que el bot está procesando la interacción
-        
+    
         user_id = str(ctx.user.id)
         server_id = str(ctx.guild.id)
         db = Database()
-        
+    
         roll_price = 500
         user = db.get_user(user_id, server_id)
         if user["coins"] < roll_price:
             await ctx.respond(f"❌ No tienes suficientes monedas para tirar un roll. Necesitas {roll_price} monedas.", ephemeral=True)
             return
-        
+    
         db.update_user(user_id, server_id, {"coins": user["coins"] - roll_price})
-        
+    
         personajes = obtener_todos_los_personajes()
         if not personajes:
             await ctx.respond("❌ No hay personajes disponibles en el gacha.", ephemeral=True)
             return
-        
+    
         personaje = self.probabilidad_personaje_roll(personajes)
+        if personaje is None:
+            await ctx.respond("⚠️ No hay personajes disponibles en el pool para este roll. Intenta más tarde.", ephemeral=True)
+            return
+    
+        # Continuar con la lógica si se seleccionó un personaje
         self.user_rolls[user_id] = personaje
-        
+    
         # Depuración: imprimir el género del personaje
         print(f"🔍 Género del personaje: {personaje.get('genero', 'No definido')}")
     
@@ -128,12 +154,12 @@ class GachaRolls(commands.Cog):
             personaje["imagen"] = imagen_url if imagen_url else personaje.get("imagen", None)
         else:
             personaje["imagen"] = personaje.get("imagen", None)  # Usar la imagen almacenada en la tabla
-        
+    
         # Añadir protección de 20 segundos
         roll_id = f"{user_id}_{datetime.now().timestamp()}"
         self.protected_rolls[roll_id] = (user_id, datetime.now() + timedelta(seconds=20))
         self.roll_prices[roll_id] = roll_price
-        
+    
         embed = discord.Embed(
             title=f"⭐ ¡Has obtenido a {personaje['nombre']}!",
             description=f"Serie: {personaje['serie']}\nRareza: {personaje['rareza']}",
@@ -143,7 +169,7 @@ class GachaRolls(commands.Cog):
             embed.set_image(url=personaje["imagen"])
         else:
             embed.set_footer(text="No se encontró una imagen para este personaje.")
-        
+    
         view = self.ClaimView(personaje, user_id, db, roll_id, self)
         await ctx.followup.send(embed=embed, view=view)  # Usar followup para enviar el mensaje después de defer
 
