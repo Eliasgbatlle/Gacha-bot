@@ -172,39 +172,28 @@ class Characters(commands.Cog):
         Comando para mostrar una imagen aleatoria de un personaje desde Gelbooru.
         """
         try:
-            await ctx.defer()
+            # Defer la interacción para indicar que el bot está procesando
+            await ctx.defer(ephemeral=True)
     
-            # Reorganizar el nombre en diferentes formatos
-            formatos_busqueda = [
-                nombre,  # Formato original
-                " ".join(nombre.split()[::-1]),  # Revertir el orden (e.g., "Satoru Gojo" -> "Gojo Satoru")
-                f"{nombre} (anime)",  # Agregar "(anime)" al final
-                f"{' '.join(nombre.split()[::-1])} (anime)"  # Revertir y agregar "(anime)"
-            ]
-    
-            # Intentar buscar imágenes en Gelbooru
-            imagen_url = None
-            for formato in formatos_busqueda:
-                imagen_url = self.imagen_random_gelbooru(formato)
-                if imagen_url:
-                    break
-    
+            # Buscar la imagen del personaje
+            imagen_url = self.imagen_random_gelbooru(nombre)
             if not imagen_url:
                 return await ctx.followup.send(f"❌ No se encontró ninguna imagen para '{nombre}'.", ephemeral=True)
     
             # Crear el embed con la imagen
             embed = discord.Embed(
                 title=f"Imagen de {nombre}",
-                description=f"Resultado de búsqueda: `{formato}`",
+                description=f"Resultado de búsqueda en Gelbooru",
                 color=discord.Color.blurple()
             )
             embed.set_image(url=imagen_url)
     
+            # Enviar la respuesta final
             await ctx.followup.send(embed=embed)
     
         except Exception as e:
             print(f"Error en comando /imagen: {e}")
-            await ctx.respond("❌ Ocurrió un error al buscar la imagen del personaje.", ephemeral=True)
+            await ctx.followup.send("❌ Ocurrió un error al buscar la imagen del personaje.", ephemeral=True)
   
     @bot.slash_command(name="info", description="Muestra la información de un personaje")
     async def info(self, ctx: discord.ApplicationContext, nombre: str):
