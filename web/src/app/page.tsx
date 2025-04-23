@@ -2,11 +2,30 @@
 
 import { useEffect, useState } from 'react';
 
+interface Character {
+    id: number;
+    name: string;
+    // Agrega más propiedades según la estructura real de los datos
+}
+
+interface User {
+    id: number;
+    username: string;
+    // Agrega más propiedades según la estructura real de los datos
+}
+
+interface Personaje {
+    id: number;
+    name: string;
+    votes: number;
+    // Agrega más propiedades según la estructura real de los datos
+}
+
 interface GachaData {
-    characters?: any[];
-    users?: any[];
-    personajes?: any[];
-    top?: any[];
+    characters?: Character[];
+    users?: User[];
+    personajes?: Personaje[];
+    top?: Personaje[];
 }
 
 export default function HomePage() {
