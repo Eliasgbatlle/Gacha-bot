@@ -2,15 +2,55 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gacha Bot</title>
-  <link rel="stylesheet" href="estilos.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(120deg, #1e1e2f, #2d2d44);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #ff6ec7;
+    }
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    a.invite-btn {
+      background: #ff6ec7;
+      color: black;
+      padding: 0.8rem 2rem;
+      border-radius: 10px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+    a.invite-btn:hover {
+      background: #ff97d7;
+    }
+    footer {
+      margin-top: 3rem;
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+  </style>
 </head>
 <body>
-  <h1>Gacha Bot</h1>
-  <p>Un bot de Discord con sistema gacha +18, economía, reputación y mucho más.</p>
-  <a href="https://discord.com/api/oauth2/authorize?client_id=TU_ID&permissions=0&scope=bot%20applications.commands" target="_blank">
-    Invita al bot
+  <h1>✨ Gacha Bot +18 ✨</h1>
+  <p>¡Colecciona waifus, roba personajes, apuesta, y domina el mercado gacha!<br>Un sistema de economía, reputación, y crimen dentro de Discord.</p>
+  <a class="invite-btn" href="https://discord.com/oauth2/authorize?client_id=TU_CLIENT_ID&permissions=0&scope=bot%20applications.commands" target="_blank">
+    Invitar al Bot
   </a>
+
+  <footer>
+    © 2025 Gacha Bot. Todos los derechos reservados.
+  </footer>
 </body>
 </html>
-
