@@ -37,6 +37,35 @@ class Characters(commands.Cog):
         self.bot = bot
         self.db_path = "personajes.db"
 
+    def generar_variaciones(self, nombre, serie=None):
+        """
+        Genera variaciones del nombre del personaje para realizar búsquedas en Gelbooru.
+        """
+        variaciones = []
+        if " " in nombre:  # Si el nombre tiene un espacio, generar variaciones
+            partes = nombre.split(" ")
+            if len(partes) == 2:  # Asumimos que tiene nombre y apellido
+                nombre_completo = f"{partes[0]}_{partes[1]}"
+                apellido_primero = f"{partes[1]}_{partes[0]}"
+                if serie:
+                    serie_formateada = serie.lower().replace(" ", "_").replace(":", ":")
+                    # Priorizar combinaciones con el título de la serie
+                    variaciones.append(f"{nombre_completo}_({serie_formateada})")
+                    variaciones.append(f"{apellido_primero}_({serie_formateada})")
+                # Agregar combinaciones sin el título de la serie
+                variaciones.append(nombre_completo)
+                variaciones.append(apellido_primero)
+        else:  # Si el nombre no tiene espacios (es una sola palabra)
+            if serie:
+                serie_formateada = serie.lower().replace(" ", "_").replace(":", ":")
+                # Priorizar combinación con el título de la serie
+                variaciones.append(f"{nombre}_({serie_formateada})")
+            # Agregar el nombre solo
+            variaciones.append(nombre)
+        return variaciones
+
+    # Otros métodos como imagen_random_gelbooru, buscar_imagen_en_gelbooru, etc.
+
     def imagen_random_gelbooru(self, personaje_nombre):
         """
         Busca una imagen aleatoria de un personaje en Gelbooru, utilizando su nombre y serie desde la base de datos.
@@ -45,73 +74,69 @@ class Characters(commands.Cog):
             # Conexión a la base de datos
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-    
+
             # Obtener el personaje y su serie desde la base de datos
             cursor.execute("""
                 SELECT nombre, serie
                 FROM personajes
-                WHERE nombre LIKE ?
-            """, (f"%{personaje_nombre}%",))
+                WHERE LOWER(nombre) = LOWER(?)
+            """, (personaje_nombre,))
             personaje = cursor.fetchone()
             conn.close()
-    
+
             if not personaje:
                 print(f"❌ No se encontró el personaje '{personaje_nombre}' en la base de datos.")
                 return None
-    
+
             nombre, serie = personaje
-    
+
             # Generar variaciones del nombre para la búsqueda
-            variaciones = [nombre]
-            if " " in nombre:  # Si el nombre tiene un espacio, generar variaciones
-                partes = nombre.split(" ")
-                if len(partes) == 2:  # Asumimos que tiene nombre y apellido
-                    nombre_completo = f"{partes[0]}_{partes[1]}"
-                    apellido_primero = f"{partes[1]}_{partes[0]}"
-                    variaciones.append(nombre_completo)
-                    variaciones.append(apellido_primero)
-                    if serie:
-                        variaciones.append(f"{nombre_completo} ({serie})")
-                        variaciones.append(f"{apellido_primero} ({serie})")
-            else:  # Si el nombre no tiene espacios (es una sola palabra)
-                if serie:
-                    variaciones.append(f"{nombre} ({serie})")
-                else:
-                    variaciones.append(nombre)  # Agregar el nombre tal cual si no hay serie
-    
-            # Log de las variaciones generadas
+            variaciones = self.generar_variaciones(nombre, serie)
             print(f"🔍 Variaciones generadas para '{personaje_nombre}': {variaciones}")
-    
-            # Normalizar y buscar cada variación
+
+            # Intentar buscar con las variaciones generadas
             for variacion in variaciones:
-                # Normalizar el nombre para eliminar caracteres especiales
-                nombre_normalizado = unicodedata.normalize('NFKD', variacion).encode('ascii', 'ignore').decode('ascii')
-                # Convertir el nombre a minúsculas y reemplazar espacios por guiones bajos
-                nombre_tag = nombre_normalizado.lower().replace(" ", "_")
-                api_url = f"https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags={nombre_tag}+rating%3Aexplicit&limit=100"
-    
-                # Log de la URL generada
-                print(f"🔗 URL generada: {api_url}")
-    
-                # Realizar la solicitud
-                response = requests.get(api_url)
-                if response.status_code == 200:
-                    data = response.json()
-    
-                    # Verificar si la respuesta contiene imágenes en la clave 'post'
-                    if "post" in data and isinstance(data["post"], list):  # La respuesta debe contener una lista en 'post'
-                        # Filtrar imágenes válidas
-                        imagenes_validas = [
-                            item["file_url"]
-                            for item in data["post"]
-                            if "file_url" in item
-                        ]
-                        if imagenes_validas:
-                            return random.choice(imagenes_validas)  # Devolver una imagen aleatoria
-    
+                imagen_url = self.buscar_imagen_en_gelbooru(variacion)
+                if imagen_url:
+                    return imagen_url
+
         except Exception as e:
             print(f"❌ Error al buscar imágenes en Gelbooru: {e}")
-    
+
+        return None
+
+    def buscar_imagen_en_gelbooru(self, variacion):
+        """
+        Realiza la búsqueda de una imagen en Gelbooru para una variación específica.
+        """
+        try:
+            # Normalizar el nombre para eliminar caracteres especiales
+            nombre_normalizado = unicodedata.normalize('NFKD', variacion).encode('ascii', 'ignore').decode('ascii')
+            # Convertir el nombre a minúsculas y reemplazar espacios por guiones bajos
+            nombre_tag = nombre_normalizado.lower().replace(" ", "_")
+            api_url = f"https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags={nombre_tag}+rating%3Aexplicit&limit=100"
+
+            # Log de la URL generada
+            print(f"🔗 URL generada: {api_url}")
+
+            # Realizar la solicitud
+            response = requests.get(api_url)
+            if response.status_code == 200:
+                data = response.json()
+
+                # Verificar si la respuesta contiene imágenes en la clave 'post'
+                if "post" in data and isinstance(data["post"], list):  # La respuesta debe contener una lista en 'post'
+                    # Filtrar imágenes válidas
+                    imagenes_validas = [
+                        item["file_url"]
+                        for item in data["post"]
+                        if "file_url" in item
+                    ]
+                    if imagenes_validas:
+                        return random.choice(imagenes_validas)  # Devolver una imagen aleatoria
+        except Exception as e:
+            print(f"❌ Error al realizar la búsqueda en Gelbooru: {e}")
+
         return None
 
     def votar_personaje(self, personaje_id):
@@ -178,7 +203,9 @@ class Characters(commands.Cog):
             # Buscar la imagen del personaje
             imagen_url = self.imagen_random_gelbooru(nombre)
             if not imagen_url:
-                return await ctx.followup.send(f"❌ No se encontró ninguna imagen para '{nombre}'.", ephemeral=True)
+                # Responder si no se encuentra ninguna imagen
+                await ctx.followup.send(f"❌ No se encontró ninguna imagen para '{nombre}'.", ephemeral=True)
+                return
     
             # Crear el embed con la imagen
             embed = discord.Embed(
@@ -193,7 +220,9 @@ class Characters(commands.Cog):
     
         except Exception as e:
             print(f"Error en comando /imagen: {e}")
-            await ctx.followup.send("❌ Ocurrió un error al buscar la imagen del personaje.", ephemeral=True)
+            # Manejar errores y responder al usuario si no se ha respondido aún
+            if not ctx.response.is_done():
+                await ctx.followup.send("❌ Ocurrió un error al buscar la imagen del personaje.", ephemeral=True)
   
     @bot.slash_command(name="info", description="Muestra la información de un personaje")
     async def info(self, ctx: discord.ApplicationContext, nombre: str):
