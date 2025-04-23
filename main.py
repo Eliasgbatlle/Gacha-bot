@@ -47,6 +47,7 @@ modules = [
     'modules.economy.bank',
     'modules.economy.work',
     'modules.economy.daily',
+    'modules.economy.market',
     'modules.gacha.characters',
     'modules.gacha.rolls',
 ]

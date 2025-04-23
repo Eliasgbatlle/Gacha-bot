@@ -8,13 +8,13 @@ from contextlib import closing
 import requests
 import random
 import unicodedata
+from discord.ext.commands import BucketType
 
 intents = discord.Intents.default()
 intents.messages = True
 intents.guilds = True
 
 bot = discord.Bot(intents=intents)
-
 
 class PaginatedView(discord.ui.View):
     def __init__(self, embeds):  # <-- Quita el parámetro timeout aquí
@@ -139,10 +139,24 @@ class Characters(commands.Cog):
 
         return None
 
-    def votar_personaje(self, personaje_id):
+    def votar_personaje(self, nombre_personaje):
         """Incrementa los votos de un personaje y actualiza el ranking."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+    
+        # Buscar el personaje por nombre (insensible a mayúsculas/minúsculas)
+        cursor.execute("""
+            SELECT id FROM personajes
+            WHERE LOWER(nombre) = LOWER(?)
+        """, (nombre_personaje,))
+        personaje = cursor.fetchone()
+    
+        if not personaje:
+            conn.close()
+            print(f"❌ No se encontró el personaje con el nombre '{nombre_personaje}'.")
+            return False
+    
+        personaje_id = personaje[0]
     
         # Incrementar los votos del personaje
         cursor.execute("UPDATE Top SET votos = votos + 1 WHERE personaje_id = ?", (personaje_id,))
@@ -152,7 +166,8 @@ class Characters(commands.Cog):
         actualizar_ranking()
     
         conn.close()
-        print(f"✅ Voto registrado para el personaje con ID {personaje_id}.")
+        print(f"✅ Voto registrado para el personaje '{nombre_personaje}'.")
+        return True
 
     def buscar_personaje(self, nombre):
         print(f"🔄 Buscando personaje: {nombre}")
@@ -189,7 +204,49 @@ class Characters(commands.Cog):
 
 
         return personajes
-
+    
+    @bot.slash_command(name="votar", description="Vota por tu personaje favorito.")
+    @commands.cooldown(1, 43200, BucketType.user)  # 1 uso cada 43200 segundos (12 horas) por usuario
+    async def vote(self, ctx: discord.ApplicationContext, nombre: str):
+        """
+        Comando para votar por un personaje ingresando su nombre.
+        """
+        try:
+            await ctx.defer()
+    
+            # Conexión a la base de datos
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+    
+            # Buscar el personaje por nombre (insensible a mayúsculas/minúsculas)
+            cursor.execute("""
+                SELECT id FROM personajes
+                WHERE LOWER(nombre) = LOWER(?)
+            """, (nombre,))
+            personaje = cursor.fetchone()
+    
+            if not personaje:
+                conn.close()
+                return await ctx.followup.send(f"❌ No se encontró el personaje con el nombre '{nombre}'.", ephemeral=True)
+    
+            personaje_id = personaje[0]
+    
+            # Incrementar los votos del personaje en la tabla 'Top'
+            cursor.execute("""
+                UPDATE Top
+                SET votos = votos + 1
+                WHERE personaje_id = ?
+            """, (personaje_id,))
+            conn.commit()
+    
+            conn.close()
+    
+            # Responder al usuario
+            await ctx.followup.send(f"✅ ¡Tu voto para '{nombre}' ha sido registrado!")
+    
+        except Exception as e:
+            print(f"Error en comando /votar: {e}")
+            await ctx.respond("❌ Ocurrió un error al registrar tu voto.", ephemeral=True)
 
     @bot.slash_command(name="imagen", description="Muestra una imagen aleatoria de un personaje desde Gelbooru")
     async def imagen(self, ctx: discord.ApplicationContext, nombre: str):
