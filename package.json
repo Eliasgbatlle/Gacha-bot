@@ -1,16 +1,6 @@
 {
   "dependencies": {
-    "canvas": "^3.1.0",
-    "next-auth": "^4.24.11",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
-  },
-  "devDependencies": {
-    "@types/node": "22.14.1",
-    "@types/react": "19.1.2",
-    "typescript": "5.8.3"
-  },
-  "scripts": {
-    "dev": "next dev"
+    "@types/sqlite3": "^3.1.11",
+    "sqlite3": "^5.1.7"
   }
 }
