@@ -1,17 +1,30 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
-import Database from 'better-sqlite3';
 
-// Ruta a la base de datos
-const dbPath = path.join(process.cwd(), '../../gacha_data.db');
+// Rutas a las bases de datos
+const gachaDbPath = path.resolve(process.cwd(), '../gacha_data.db');
+const personajesDbPath = path.resolve(process.cwd(), '../personajes.db');
 
 export async function GET() {
     try {
-        const db = new Database(dbPath, { readonly: true });
-        const rows = db.prepare('SELECT * FROM gacha_table').all();
-        db.close();
-        return NextResponse.json(rows);
+        const Database = (await import('better-sqlite3')).default;
+
+        // Conectar a gacha_data.db
+        const gachaDb = new Database(gachaDbPath, { readonly: true });
+        const characters = gachaDb.prepare('SELECT * FROM characters').all();
+        const users = gachaDb.prepare('SELECT * FROM users').all();
+        gachaDb.close();
+
+        // Conectar a personajes.db
+        const personajesDb = new Database(personajesDbPath, { readonly: true });
+        const personajes = personajesDb.prepare('SELECT * FROM personajes').all();
+        const top = personajesDb.prepare('SELECT * FROM top').all();
+        personajesDb.close();
+
+        return NextResponse.json({ characters, users, personajes, top });
     } catch (error) {
-        return NextResponse.json({ error: 'Error al consultar la base de datos', details: error.message }, { status: 500 });
+        console.error('Error al consultar las bases de datos:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        return NextResponse.json({ error: 'Error al consultar las bases de datos', details: errorMessage }, { status: 500 });
     }
 }
