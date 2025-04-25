@@ -129,9 +129,19 @@ export default function HomePage() {
                                 }}
                             >
                                 <div className="bg-indigo-500/20 p-4 rounded-full backdrop-blur-md border border-indigo-400/30">
-                                    <div className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
-                                        {character.name.charAt(0) || '?'}
+                                    {character.image ? (
+                                    <div className="w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-indigo-400">
+                                        <img 
+                                        src={character.image} 
+                                        alt={character.nombre}
+                                        className="w-full h-full object-cover"
+                                        />
                                     </div>
+                                    ) : (
+                                    <div className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                                        {character.nombre.charAt(0)}
+                                    </div>
+                                    )}
                                 </div>
                             </motion.div>
                         ))}
@@ -224,9 +234,19 @@ export default function HomePage() {
                                     viewport={{ once: true }}
                                     className="bg-gray-800/50 card-hover-effect rounded-xl p-6 border border-gray-700/50 flex flex-col items-center"
                                 >
-                                    <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold mb-4 text-2xl">
-                                        {character.name.charAt(0)}
-                                    </div>
+                                        {character.image ? (
+                                        <div className="w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-indigo-400">
+                                            <img 
+                                            src={character.image} 
+                                            alt={character.nombre}
+                                            className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        ) : (
+                                        <div className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                                            {character.nombre.charAt(0)}
+                                        </div>
+                                        )}
                                     <h3 className="text-lg font-medium text-white mb-1">{character.name || 'Sin nombre'}</h3>
                                     <span className="text-sm text-indigo-400">{character.rarity || "Común"}</span>
                                 </motion.div>
