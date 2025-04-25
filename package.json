@@ -1,7 +1,9 @@
 {
   "dependencies": {
+    "@next-auth/prisma-adapter": "^1.0.7",
     "@types/sqlite3": "^3.1.11",
     "better-sqlite3": "^11.9.1",
+    "next-auth": "^4.24.11",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
