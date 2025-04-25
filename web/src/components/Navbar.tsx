@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { DiscordLogoIcon } from "@radix-ui/react-icons";
+import Image from 'next/image';
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -29,7 +30,7 @@ export default function Navbar() {
           >
             {session ? (
               <div className="flex items-center gap-4">
-                <img 
+                <Image 
                   src={session.user?.image || ""} 
                   alt="User Avatar"
                   className="w-8 h-8 rounded-full"
