@@ -56,12 +56,12 @@ export default function HomePage() {
                 const cleanData = {
                     characters: (apiData.personajes || []).map((p: any) => ({
                         id: p.id,
-                        name: p.nombre,
-                        image: p.imagen,
-                        rarity: p.rareza,
-                        genre: p.genero,
-                        series: p.erie,
-                        price: p.precio
+                        name: p.name,
+                        image: p.image,
+                        rarity: p.rarity,
+                        genre: p.genre,
+                        series: p.series,
+                        price: p.price
                     })),
                     users: apiData.users || [],
                     personajes: apiData.personajes || [],

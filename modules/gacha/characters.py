@@ -408,6 +408,40 @@ class Characters(commands.Cog):
             else:
                 await ctx.followup.send("❌ Ocurrió un error al mostrar los personajes", ephemeral=True)
 
+    def obtener_personajes_por_usuario(usuario_id, servidor_id):
+        """
+        Obtiene los personajes reclamados por un usuario en un servidor específico.
+        """
+        conn = sqlite3.connect('gacha_data.db')
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT c.nombre, c.rareza, c.serie
+            FROM characters c
+            WHERE c.usuario_id = ? AND c.servidor_id = ?
+        ''', (usuario_id, servidor_id))
+
+        personajes = cursor.fetchall()
+        conn.close()
+        return personajes
+
+    def obtener_info_usuario(usuario_id, servidor_id):
+        """
+        Obtiene la información básica de un usuario en un servidor específico.
+        """
+        conn = sqlite3.connect('gacha_data.db')
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT u.nombre, u.nivel, u.experiencia
+            FROM user u
+            WHERE u.id = ? AND u.servidor_id = ?
+        ''', (usuario_id, servidor_id))
+
+        usuario = cursor.fetchone()
+        conn.close()
+        return usuario
+
 def setup(bot: discord.Bot):
     print("✅ Characters cargado")
     bot.add_cog(Characters(bot))

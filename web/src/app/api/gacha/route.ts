@@ -1,27 +1,44 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
 
-// Rutas a las bases de datos
-const gachaDbPath = path.resolve(process.cwd(), '../gacha_data.db');
-const personajesDbPath = path.resolve(process.cwd(), '../personajes.db');
-
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const userId = searchParams.get('userId');
+        const serverId = searchParams.get('serverId');
+
         const Database = (await import('better-sqlite3')).default;
 
-        // Conectar a gacha_data.db
-        const gachaDb = new Database(gachaDbPath, { readonly: true });
-        const characters = gachaDb.prepare('SELECT * FROM characters').all();
-        const users = gachaDb.prepare('SELECT * FROM users').all();
-        gachaDb.close();
+        if (userId && serverId) {
+            // Lógica para /menu/page.tsx usando gacha_data.db
+            const gachaDbPath = path.resolve(process.cwd(), '../gacha_data.db');
+            const gachaDb = new Database(gachaDbPath, { readonly: true });
 
-        // Conectar a personajes.db
-        const personajesDb = new Database(personajesDbPath, { readonly: true });
-        const personajes = personajesDb.prepare('SELECT id, nombre, genero, imagen, serie, rareza, precio FROM personajes').all();
-        const top = personajesDb.prepare('SELECT * FROM top').all();
-        personajesDb.close();
+            const user = gachaDb
+                .prepare('SELECT nombre, nivel, experiencia FROM users WHERE user_id = ? AND server_id = ?')
+                .get(userId, serverId);
+            const characters = gachaDb
+                .prepare('SELECT name, rarity, image_url FROM characters WHERE owner_id = ? AND server_id = ?')
+                .all(userId, serverId);
 
-        return NextResponse.json({ characters, users, personajes, top });
+            gachaDb.close();
+
+            return NextResponse.json({ user, characters });
+        } else {
+            // Lógica para /page.tsx usando personajes.db
+            const personajesDbPath = path.resolve(process.cwd(), '../personajes.db');
+            const Database = (await import('better-sqlite3')).default;
+
+            const personajesDb = new Database(personajesDbPath, { readonly: true });
+
+            const personajes = personajesDb
+                .prepare('SELECT id, nombre AS name, imagen AS image, rareza AS rarity, genero AS genre, serie AS series, precio AS price FROM personajes')
+                .all();
+
+            personajesDb.close();
+
+            return NextResponse.json({ personajes });
+        }
     } catch (error) {
         console.error('Error al consultar las bases de datos:', error);
         const errorMessage = error instanceof Error ? error.message : 'Error desconocido';

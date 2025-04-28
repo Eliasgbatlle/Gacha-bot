@@ -1,13 +1,15 @@
 "use client";
 
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/sidebar';
+import Servers from '@/components/Servers';
 
 export default function Dashboard() {
     const { data: session } = useSession();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [selectedServer, setSelectedServer] = useState('Seleccione servidor');
     const router = useRouter();
 
     useEffect(() => {
@@ -32,13 +34,6 @@ export default function Dashboard() {
             <main className="flex-1 p-6">
                 <header className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold">Bienvenido al Dashboard</h2>
-                    <div className="flex items-center gap-4">
-                        <div className="text-right">
-                            <p className="text-sm">Usuario</p>
-                            <p className="font-bold">Nombre del Usuario</p>
-                        </div>
-                        <div className="w-10 h-10 bg-indigo-600 rounded-full"></div>
-                    </div>
                 </header>
 
                 {/* Sections */}
@@ -77,6 +72,10 @@ export default function Dashboard() {
                     </div>
                 </section>
             </main>
+
+            <div className="absolute top-6 right-6">
+                <Servers />
+            </div>
 
             <style jsx>{`
                                 @keyframes fadeIn {
