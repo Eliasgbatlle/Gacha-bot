@@ -54,7 +54,15 @@ export default function HomePage() {
             .then((apiData) => {
                 // Limpieza de datos
                 const cleanData = {
-                    characters: (apiData.characters || []).filter((c: Character) => c?.name),
+                    characters: (apiData.personajes || []).map((p: any) => ({
+                        id: p.id,
+                        name: p.nombre,
+                        image: p.imagen,
+                        rarity: p.rareza,
+                        genre: p.genero,
+                        series: p.erie,
+                        price: p.precio
+                    })),
                     users: apiData.users || [],
                     personajes: apiData.personajes || [],
                     top: (apiData.top || []).filter((p: Personaje) => p?.name)
@@ -69,6 +77,8 @@ export default function HomePage() {
         return <p style={{ color: 'red' }}>{error}</p>;
     }
 
+    const characterCount = data.characters?.length || 0;
+
     return (
         <div className="pt-16 min-h-screen">
             {/* Hero Section */}
@@ -82,10 +92,10 @@ export default function HomePage() {
                         transition={{ duration: 0.8 }}
                         className="text-center"
                     >
-                        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-indigo-400 to-purple-600 gradient-text">
+                        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-indigo-400 to-purple-600 gradient-text drop-shadow-[0_4px_6px_rgba(0,0,0,0.9)]">
                             Colecciona Personajes Épicos
                         </h1>
-                        <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-10">
+                        <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-10 drop-shadow-[0_4px_6px_rgba(0,0,0,0.9)]">
                             Un bot de Discord donde puedes coleccionar personajes, competir con amigos y subir en el ranking.
                         </p>
                         
@@ -115,36 +125,52 @@ export default function HomePage() {
                 
                 {/* Floating characters */}
                 {data.characters && data.characters?.length > 0 && (
-                    <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 pointer-events-none">
-                        {data.characters.slice(0, 5).map((character, index) => (
-                            <motion.div
-                                key={character?.id || index}
-                                initial={{ opacity: 0, y: 50 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: index * 0.2 }}
-                                className={`absolute float-animation`}
-                                style={{
-                                    left: `${10 + index * 15}%`,
-                                    animationDelay: `${index * 0.5}s`
-                                }}
-                            >
-                                <div className="bg-indigo-500/20 p-4 rounded-full backdrop-blur-md border border-indigo-400/30">
-                                    {character.image ? (
-                                    <div className="w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-indigo-400">
-                                        <img 
-                                        src={character.image} 
-                                        alt={character.name}
-                                        className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    ) : (
-                                    <div className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
-                                        {character.name.charAt(0)}
-                                    </div>
-                                    )}
-                                </div>
-                            </motion.div>
-                        ))}
+                    <div className="absolute top-0 left-0 right-0 bottom-0 overflow-hidden pointer-events-none">
+                        <motion.div
+                            className="flex h-full"
+                            transition={{
+                                x: {
+                                    repeat: Infinity,
+                                    repeatType: "loop",
+                                    duration: characterCount * 700,
+                                    ease: "linear",
+                                },
+                                y: {
+                                    repeat: Infinity,
+                                    repeatType: "mirror",
+                                    duration: 21, // Duración para la animación de subir y bajar
+                                    ease: "easeInOut",
+                                },
+                            }}
+                            style={{ width: `${characterCount * 1}%` }}
+                        >
+                            {data.characters.map((character, index) => (
+                                <motion.img
+                                    key={character?.id || index}
+                                    src={character.image}
+                                    alt={character.name}
+                                    className="h-full object-contain"
+                                    animate={{
+                                        x: [0, -characterCount * 100 + '%'],
+                                        y: [0, -8, 0],
+                                    }}
+                                    transition={{
+                                        x: {
+                                            repeat: Infinity,
+                                            repeatType: "loop",
+                                            duration: (characterCount || 1) * 10,
+                                            ease: "linear",
+                                        },
+                                        y: {
+                                            repeat: Infinity,
+                                            repeatType: "mirror",
+                                            duration: 2 + index * 0.5, // Animación independiente para cada imagen
+                                            ease: "easeInOut",
+                                        },
+                                    }}
+                                />
+                            ))}
+                        </motion.div>
                     </div>
                 )}
             </section>
@@ -222,35 +248,36 @@ export default function HomePage() {
                                 Colecciona todos los personajes y completa tu álbum
                             </p>
                         </motion.div>
-                        
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                            {data.characters.map((character, index) => (
-                                <motion.div
-                                    key={character?.id || index}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    whileHover={{ y: -10 }}
-                                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                                    viewport={{ once: true }}
-                                    className="bg-gray-800/50 card-hover-effect rounded-xl p-6 border border-gray-700/50 flex flex-col items-center"
-                                >
-                                        {character.image ? (
+
+                        <div className="overflow-hidden relative">
+                            <motion.div
+                                className="flex gap-6"
+                                animate={{ x: [0, -100 * data.characters.length + '%'] }}
+                                transition={{
+                                    repeat: Infinity,
+                                    repeatType: "loop",
+                                    duration: data.characters.length * 40, // Incremento la duración para que el desplazamiento sea más lento
+                                    ease: "linear",
+                                }}
+                                style={{ width: `${data.characters.length * 0.1}%` }}
+                            >
+                                {data.characters.map((character, index) => (
+                                    <div
+                                        key={character?.id || index}
+                                        className="flex-shrink-0 w-1/5 bg-gray-800/50 card-hover-effect rounded-xl p-6 border border-gray-700/50 flex flex-col items-center"
+                                    >
                                         <div className="w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-indigo-400">
-                                            <img 
-                                            src={character.image} 
-                                            alt={character.name}
-                                            className="w-full h-full object-cover"
+                                            <img
+                                                src={character.image}
+                                                alt={character.name}
+                                                className="w-full h-full object-cover"
                                             />
                                         </div>
-                                        ) : (
-                                        <div className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
-                                            {character.name.charAt(0)}
-                                        </div>
-                                        )}
-                                    <h3 className="text-lg font-medium text-white mb-1">{character.name || 'Sin nombre'}</h3>
-                                    <span className="text-sm text-indigo-400">{character.rarity || "Común"}</span>
-                                </motion.div>
-                            ))}
+                                        <h3 className="text-lg font-medium text-white mb-1">{character.name || 'Sin nombre'}</h3>
+                                        <span className="text-sm text-indigo-400">{character.rarity || "Común"}</span>
+                                    </div>
+                                ))}
+                            </motion.div>
                         </div>
                     </div>
                 </section>

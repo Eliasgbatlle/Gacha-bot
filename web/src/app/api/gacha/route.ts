@@ -17,7 +17,7 @@ export async function GET() {
 
         // Conectar a personajes.db
         const personajesDb = new Database(personajesDbPath, { readonly: true });
-        const personajes = personajesDb.prepare('SELECT * FROM personajes').all();
+        const personajes = personajesDb.prepare('SELECT id, nombre, genero, imagen, serie, rareza, precio FROM personajes').all();
         const top = personajesDb.prepare('SELECT * FROM top').all();
         personajesDb.close();
 
