@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/sidebar';
 import Servers from '@/components/Servers';
@@ -9,8 +9,6 @@ import Servers from '@/components/Servers';
 export default function Dashboard() {
     const { data: session } = useSession();
     const [menuOpen, setMenuOpen] = useState(false);
-    const [selectedServer, setSelectedServer] = useState('Seleccione servidor');
-    const router = useRouter();
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

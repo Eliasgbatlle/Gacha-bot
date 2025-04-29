@@ -54,7 +54,7 @@ export default function HomePage() {
             .then((apiData) => {
                 // Limpieza de datos
                 const cleanData = {
-                    characters: (apiData.personajes || []).map((p: any) => ({
+                    characters: (apiData.personajes || []).map((p: { id: number; name: string; image: string; rarity: string; genre: string; series: string; price: number; }) => ({
                         id: p.id,
                         name: p.name,
                         image: p.image,
