@@ -17,6 +17,7 @@ export default function Dashboard() {
                 setMenuOpen(false);
             }
         };
+        
 
         document.addEventListener('click', handleClickOutside);
         return () => {
