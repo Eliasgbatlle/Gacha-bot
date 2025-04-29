@@ -9,9 +9,6 @@ export default function Sidebar() {
     const router = useRouter();
     const pathname = usePathname();
 
-    // Definir el estado collapsed
-    const [collapsed, setCollapsed] = useState(false);
-
     // Agregar lógica para deshabilitar y cambiar el color del botón dependiendo de la página actual
     const isActive = (path: string) => pathname === path;
 
@@ -32,15 +29,15 @@ export default function Sidebar() {
                     disabled={isActive('/')}
                 >
                     <HomeIcon className="w-5 h-5" />
-                    {!collapsed && 'Inicio'}
-                </button>
+                    inicio
+               </button>
                 <button
                     onClick={() => router.push('/menu')}
                     className={`text-left flex items-center gap-2 ${isActive('/menu') ? 'text-indigo-400 cursor-default' : 'text-gray-300 hover:text-indigo-400'}`}
                     disabled={isActive('/menu')}
                 >
                     <ViewGridIcon className="w-5 h-5" />
-                    {!collapsed && 'Dashboard'}
+                    Dashboard
                 </button>
                 <button
                     className={`text-left flex items-center gap-2 ${isActive('/gacha') ? 'text-indigo-400 cursor-default' : 'text-gray-300 hover:text-indigo-400'}`}
