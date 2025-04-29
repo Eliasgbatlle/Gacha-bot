@@ -91,7 +91,7 @@ export default function Navbar() {
                                                     <span className="icon-settings"></span> Configuración
                                                 </button>
                                                 <button
-                                                    onClick={() => signOut()}
+                                                    onClick={() => signOut({ callbackUrl: '/' })}
                                                     className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 w-full text-left flex items-center gap-2"
                                                 >
                                                     <span className="icon-logout"></span> Cerrar sesión

@@ -2,6 +2,7 @@ import discord
 import os
 import json
 from dotenv import load_dotenv
+from utils.database import Database
 from utils.databasechar import crear_base_de_datos, generar_personajes, TOTAL_PERSONAJES
 
 crear_base_de_datos()
@@ -10,12 +11,6 @@ generar_personajes(TOTAL_PERSONAJES)
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-# --- Configuración e intents ---
-def load_config():
-    with open('config.json','r') as f:
-        return json.load(f)
-
-config = load_config()
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -32,6 +27,18 @@ async def on_ready():
     # Sincroniza los slash commands con Discord
     await bot.sync_commands()
     print('⚡ Slash commands sincronizados')
+
+    # Llenar la tabla 'servers' con los servidores actuales
+    db = Database()
+    with db.get_connection() as conn:
+        cursor = conn.cursor()
+        for guild in bot.guilds:
+            cursor.execute(
+                "INSERT OR IGNORE INTO servers (server_id, server_name) VALUES (?, ?)",
+                (str(guild.id), guild.name)
+            )
+        conn.commit()
+    print('✅ Tabla servers actualizada con los servidores actuales')
 
 # --- Comando de prueba ---
 @bot.slash_command(name="ping", description="Verifica la latencia del bot")
@@ -58,6 +65,11 @@ for mod in modules:
         print(f'✅ Extensión {mod} cargada')
     except Exception as e:
         print(f'❌ Error cargando {mod}: {e}')
+
+# Inicializa la base de datos y crea las tablas si no existen
+if __name__ == "__main__":
+    db = Database()
+    print("Tablas inicializadas correctamente.")
 
 # --- Arranca el bot ---
 bot.run(TOKEN)

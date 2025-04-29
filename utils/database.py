@@ -39,18 +39,11 @@ class Database:
                 )
             """)
 
-            # Tabla 'characters' (personajes gacha)
+            # Tabla 'servers'
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS characters (
-                    character_id TEXT PRIMARY KEY,
-                    owner_id TEXT NOT NULL,
-                    server_id TEXT NOT NULL,
-                    name TEXT NOT NULL,
-                    rarity INTEGER NOT NULL,
-                    value INTEGER NOT NULL,
-                    stolen BOOLEAN DEFAULT FALSE,
-                    protected BOOLEAN DEFAULT TRUE,
-                    image_url TEXT  -- URL de la imagen del personaje
+                CREATE TABLE IF NOT EXISTS servers (
+                    server_id TEXT PRIMARY KEY,
+                    name_id TEXT NOT NULL
                 )
             """)
 
