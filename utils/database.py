@@ -47,6 +47,17 @@ class Database:
                 )
             """)
 
+            # Tabla 'global_ranking'
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS global_ranking (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    max_score INTEGER NOT NULL,
+                    rank INTEGER NOT NULL,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             conn.commit()
 
     def get_connection(self):

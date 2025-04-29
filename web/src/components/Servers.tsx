@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 
-export default function Servers() {
+interface ServersProps {
+    onSelectServer: (server: string) => void;
+}
+
+export default function Servers({ onSelectServer }: ServersProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [selectedServer, setSelectedServer] = useState('Seleccione servidor');
     const [servers, setServers] = useState<string[]>([]);
@@ -38,6 +42,7 @@ export default function Servers() {
                                 onClick={() => {
                                     setSelectedServer(server);
                                     setMenuOpen(false);
+                                    onSelectServer(server);
                                 }}
                                 className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 w-full text-left"
                             >

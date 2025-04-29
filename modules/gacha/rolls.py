@@ -69,6 +69,11 @@ class GachaRolls(commands.Cog):
         self.protected_rolls = {}  # {roll_id: (user_id, expiration_time)}
         self.roll_prices = {}  # {roll_id: price}
     
+    async def periodic_global_ranking_update(self):
+        while True:
+            update_global_ranking()
+            await asyncio.sleep(600)  # Esperar 10 minutos (600 segundos)
+    
     async def check_expired_protections(self):
         while True:
             now = datetime.now()
@@ -173,6 +178,9 @@ class GachaRolls(commands.Cog):
         view = self.ClaimView(personaje, user_id, db, roll_id, self)
         await ctx.followup.send(embed=embed, view=view)  # Usar followup para enviar el mensaje después de defer
 
+        # Actualizar la tabla de rankings después de un giro
+        update_rankings()
+
     class ClaimView(discord.ui.View):
         def __init__(self, personaje, user_id, db, roll_id, parent_cog):
             super().__init__(timeout=60)
@@ -269,7 +277,95 @@ class GachaRolls(commands.Cog):
                     ephemeral=True
                 )
 
+def update_rankings():
+    db_path = "gacha_data.db"
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Verificar si la tabla 'servers' existe y crearla si no
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS servers (
+            server_id TEXT PRIMARY KEY,
+            server_name TEXT NOT NULL
+        )
+        """
+    )
+
+    # Obtener todos los servidores
+    servers = cursor.execute("SELECT DISTINCT server_id FROM servers").fetchall()
+
+    for server in servers:
+        server_id = server[0]
+
+        # Calcular puntajes para cada usuario en el servidor
+        users = cursor.execute(
+            """
+            SELECT u.user_id, 
+                   (SELECT COALESCE(SUM(value), 0) FROM characters WHERE owner_id = u.user_id AND server_id = ?) + 
+                   u.coins + 
+                   ABS(u.reputation) AS score
+            FROM users u
+            WHERE u.server_id = ?
+            ORDER BY score DESC
+            """,
+            (server_id, server_id)
+        ).fetchall()
+
+        # Actualizar la tabla ranking
+        for rank, (user_id, score) in enumerate(users, start=1):
+            cursor.execute(
+                """
+                INSERT INTO ranking (user_id, server_id, score, rank, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(user_id, server_id) DO UPDATE SET
+                    score = excluded.score,
+                    rank = excluded.rank,
+                    updated_at = excluded.updated_at
+                """,
+                (user_id, server_id, score, rank, datetime.now())
+            )
+
+    conn.commit()
+    conn.close()
+
+def update_global_ranking():
+    db_path = "gacha_data.db"
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Obtener el puntaje más alto de cada usuario entre todos los servidores
+    users = cursor.execute(
+        """
+        SELECT user_id, MAX(score) as max_score
+        FROM ranking
+        GROUP BY user_id
+        ORDER BY max_score DESC
+        """
+    ).fetchall()
+
+    # Actualizar la tabla global_ranking
+    for rank, (user_id, max_score) in enumerate(users, start=1):
+        cursor.execute(
+            """
+            INSERT INTO global_ranking (user_id, max_score, rank, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                max_score = excluded.max_score,
+                rank = excluded.rank,
+                updated_at = excluded.updated_at
+            """,
+            (user_id, max_score, rank, datetime.now())
+        )
+
+    conn.commit()
+    conn.close()
+
+# Llamar a esta función periódicamente o después de actualizar el ranking por servidores
+
 def setup(bot):
-    cog = GachaRolls(bot)
-    bot.add_cog(cog)
-    bot.loop.create_task(cog.check_expired_protections())
+        cog = GachaRolls(bot)
+        bot.add_cog(cog)
+        bot.loop.create_task(cog.check_expired_protections())
+        bot.loop.create_task(cog.periodic_global_ranking_update())
+
