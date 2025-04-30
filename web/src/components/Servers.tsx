@@ -6,7 +6,7 @@ interface ServersProps {
 
 export default function Servers({ onSelectServer }: ServersProps) {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [selectedServer, setSelectedServer] = useState('Seleccione servidor');
+    const [selectedServer, setSelectedServer] = useState(""); // Inicializar con una cadena vacía
     const [servers, setServers] = useState<string[]>([]);
 
     useEffect(() => {
@@ -21,6 +21,14 @@ export default function Servers({ onSelectServer }: ServersProps) {
         }
         fetchServers();
     }, []);
+
+    useEffect(() => {
+        if (servers.length > 0) {
+            const firstServer = servers[0];
+            setSelectedServer(firstServer); // Seleccionar el primer servidor
+            onSelectServer(firstServer); // Notificar al componente padre
+        }
+    }, [servers]);
 
     return (
         <div className="relative">

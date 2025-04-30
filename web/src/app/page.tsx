@@ -123,7 +123,7 @@ export default function HomePage() {
                     </motion.div>
                 </div>
                 
-                {/* Floating characters */}
+                {/* Floating characters optimizado */}
                 {data.characters && data.characters?.length > 0 && (
                     <div className="absolute top-0 left-0 right-0 bottom-0 overflow-hidden pointer-events-none">
                         <motion.div
@@ -132,39 +132,40 @@ export default function HomePage() {
                                 x: {
                                     repeat: Infinity,
                                     repeatType: "loop",
-                                    duration: characterCount * 700,
+                                    duration: Math.min(characterCount, 20) * 10, // Limitar duración
                                     ease: "linear",
                                 },
                                 y: {
                                     repeat: Infinity,
                                     repeatType: "mirror",
-                                    duration: 21, // Duración para la animación de subir y bajar
+                                    duration: 21,
                                     ease: "easeInOut",
                                 },
                             }}
-                            style={{ width: `${characterCount * 1}%` }}
+                            style={{ width: `${Math.min(characterCount, 20) * 1}%` }} // Limitar cantidad de imágenes
                         >
-                            {data.characters.map((character, index) => (
+                            {data.characters.slice(0, 20).map((character, index) => (
                                 <motion.img
                                     key={character?.id || index}
                                     src={character.image}
                                     alt={character.name}
                                     className="h-full object-contain"
+                                    loading="lazy" // Lazy loading para optimizar
                                     animate={{
-                                        x: [0, -characterCount * 100 + '%'],
+                                        x: [0, -Math.min(characterCount, 20) * 100 + '%'],
                                         y: [0, -8, 0],
                                     }}
                                     transition={{
                                         x: {
                                             repeat: Infinity,
                                             repeatType: "loop",
-                                            duration: (characterCount || 1) * 10,
+                                            duration: Math.min(characterCount, 20) * 10,
                                             ease: "linear",
                                         },
                                         y: {
                                             repeat: Infinity,
                                             repeatType: "mirror",
-                                            duration: 2 + index * 0.5, // Animación independiente para cada imagen
+                                            duration: 2 + index * 0.5,
                                             ease: "easeInOut",
                                         },
                                     }}

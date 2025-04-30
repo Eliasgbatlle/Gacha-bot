@@ -16,12 +16,19 @@ export async function GET(request: Request) {
         const searchParams = new URL(request.url).searchParams;
         const server = searchParams.get('server');
 
-        if (!server) {
-            return NextResponse.json({ error: 'Servidor no especificado' }, { status: 400 });
-        }
-
         const Database = (await import('better-sqlite3')).default;
         const db = new Database(gachaDbPath, { readonly: true });
+
+        if (!server) {
+            // Si no se especifica un servidor, devolver el ranking global
+            const globalRankings = db.prepare(
+                `SELECT user_id, max_score, rank 
+                 FROM global_ranking 
+                 ORDER BY rank ASC`
+            ).all();
+
+            return NextResponse.json({ globalRankings });
+        }
 
         // Obtener puntaje y ranking del jugador actual desde la tabla ranking
         const playerData = db.prepare(

@@ -1,98 +1,148 @@
+'use client';
+
+import {
+  HomeIcon,
+  CogIcon,
+  ChartBarIcon,
+  CurrencyDollarIcon,
+  UserGroupIcon,
+  ViewGridIcon,
+  MenuIcon,
+  XIcon,
+} from '@heroicons/react/outline';
 import { useSession, signOut } from 'next-auth/react';
-import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { HomeIcon, CogIcon, ChartBarIcon, CurrencyDollarIcon, UserGroupIcon, ViewGridIcon } from '@heroicons/react/outline';
+import { useState, useEffect } from 'react';
+
+const navItems = [
+  { path: '/', label: 'Inicio', icon: HomeIcon },
+  { path: '/menu', label: 'Dashboard', icon: ViewGridIcon },
+  { path: '/gacha', label: 'Gacha', icon: ChartBarIcon },
+  { path: '/economia', label: 'Economía', icon: CurrencyDollarIcon },
+  { path: '/ranking', label: 'Ranking', icon: UserGroupIcon },
+  { path: '/configuracion', label: 'Configuración', icon: CogIcon },
+];
 
 export default function Sidebar() {
-    const { data: session } = useSession();
-    const [menuOpen, setMenuOpen] = useState(false);
-    const router = useRouter();
-    const pathname = usePathname();
+  const { data: session } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-    // Agregar lógica para deshabilitar y cambiar el color del botón dependiendo de la página actual
-    const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname === path;
 
-    return (
-        <aside className="w-64 bg-gray-800 p-6 flex flex-col gap-6">
-            <div className="flex items-center gap-4">
-                <h1
-                    onClick={() => router.push('/')}
-                    className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-600 gradient-text cursor-pointer"
-                >
-                    Gacha Bot
-                </h1>
-            </div>
-            <nav className="flex flex-col gap-4">
-                <button
-                    onClick={() => router.push('/')}
-                    className={`text-left flex items-center gap-2 ${isActive('/') ? 'text-indigo-400 cursor-default' : 'text-gray-300 hover:text-indigo-400'}`}
-                    disabled={isActive('/')}
-                >
-                    <HomeIcon className="w-5 h-5" />
-                    inicio
-               </button>
-                <button
-                    onClick={() => router.push('/menu')}
-                    className={`text-left flex items-center gap-2 ${isActive('/menu') ? 'text-indigo-400 cursor-default' : 'text-gray-300 hover:text-indigo-400'}`}
-                    disabled={isActive('/menu')}
-                >
-                    <ViewGridIcon className="w-5 h-5" />
-                    Dashboard
-                </button>
-                <button
-                    className={`text-left flex items-center gap-2 ${isActive('/gacha') ? 'text-indigo-400 cursor-default' : 'text-gray-300 hover:text-indigo-400'}`}
-                    disabled={isActive('/gacha')}
-                >
-                    <ChartBarIcon className="w-5 h-5" /> Gacha
-                </button>
-                <button
-                    className={`text-left flex items-center gap-2 ${isActive('/economia') ? 'text-indigo-400 cursor-default' : 'text-gray-300 hover:text-indigo-400'}`}
-                    disabled={isActive('/economia')}
-                >
-                    <CurrencyDollarIcon className="w-5 h-5" /> Economía
-                </button>
-                <button
-                    className={`text-left flex items-center gap-2 ${isActive('/ranking') ? 'text-indigo-400 cursor-default' : 'text-gray-300 hover:text-indigo-400'}`}
-                    disabled={isActive('/ranking')}
-                >
-                    <UserGroupIcon className="w-5 h-5" /> Ranking
-                </button>
-                <button
-                    className={`text-left flex items-center gap-2 ${isActive('/configuracion') ? 'text-indigo-400 cursor-default' : 'text-gray-300 hover:text-indigo-400'}`}
-                    disabled={isActive('/configuracion')}
-                >
-                    <CogIcon className="w-5 h-5" /> Configuración
-                </button>
-            </nav>
-            <div className="mt-auto flex items-center gap-4 bg-gray-700 p-4 rounded-lg cursor-pointer relative" onClick={() => setMenuOpen(!menuOpen)}>
-                {session?.user?.image && (
-                    <img
-                        src={session.user.image}
-                        alt="User Avatar"
-                        className="w-10 h-10 rounded-full"
-                    />
-                )}
-                <div>
-                    <p className="text-sm font-bold text-white">{session?.user?.name || 'Usuario'}</p>
-                    <p className="text-xs text-gray-400">{session?.user?.email || 'Correo no disponible'}</p>
-                </div>
-                {menuOpen && (
-                    <div className="absolute bottom-full right-0 mb-2 w-54.5 bg-gray-700 rounded-md shadow-lg py-1 z-10 transition-transform transform scale-95 origin-bottom-right" style={{ animation: 'fadeIn 0.2s ease-out forwards' }}>
-                        <button
-                            onClick={() => router.push('/settings')}
-                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 w-full text-left flex items-center gap-2"
-                        >
-                            <span className="icon-settings"></span> Configuración
-                        </button>
-                        <button
-                            onClick={() => signOut({ callbackUrl: '/' })}
-                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 w-full text-left flex items-center gap-2"
-                        >
-                            <span className="icon-logout"></span> Cerrar sesión
-                        </button>
-                    </div>
-                )}
-            </div>
-        </aside>
-    );
+  // Cierra el dropdown si se colapsa el sidebar
+  const toggleMenu = () => {
+    setMenuOpen((prev) => {
+      if (prev) setDropdownOpen(false);
+      return !prev;
+    });
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.dropdown') && dropdownOpen) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
+
+  return (
+    <aside
+      className={`bg-gray-800 h-screen p-4 flex flex-col transition-all duration-300 ${
+        menuOpen ? 'w-64' : 'w-20'
+      }`}
+    >
+      {/* Encabezado */}
+      <div className={`flex ${menuOpen ? 'justify-between' : 'justify-center'} items-center mb-6`}>
+        {menuOpen && (
+          <h1
+            onClick={() => router.push('/')}
+            className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-600 text-transparent bg-clip-text cursor-pointer whitespace-nowrap"
+          >
+            Gacha Bot
+          </h1>
+        )}
+        <button onClick={toggleMenu} className="text-white">
+          {menuOpen ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Navegación */}
+      <nav className="flex flex-col gap-4">
+        {navItems.map(({ path, label, icon: Icon }) => (
+          <button
+            key={path}
+            onClick={() => router.push(path)}
+            className={`group relative flex items-center ${
+              menuOpen ? 'gap-3 justify-start' : 'justify-center'
+            } px-2 py-2 rounded-md
+            ${
+              isActive(path)
+                ? 'text-indigo-400 bg-gray-700'
+                : 'text-gray-300 hover:text-indigo-400 hover:bg-gray-700'
+            }`}
+            disabled={isActive(path)}
+          >
+            <Icon className="w-5 h-5" />
+            {menuOpen && <span className="text-sm">{label}</span>}
+            {!menuOpen && (
+              <span className="absolute left-full ml-2 whitespace-nowrap bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">
+                {label}
+              </span>
+            )}
+          </button>
+        ))}
+      </nav>
+
+      {/* Usuario */}
+      <div
+        className={`mt-auto flex items-center ${
+          menuOpen ? 'gap-3 justify-start' : 'justify-center'
+        } bg-gray-700 p-2 rounded-lg cursor-pointer relative`}
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+      >
+        <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden bg-gray-600">
+          {session?.user?.image && (
+            <img
+              src={session.user.image}
+              alt="Avatar"
+              className="w-full h-full object-cover" // Asegura que la imagen mantenga sus proporciones
+            />
+          )}
+        </div>
+        {menuOpen && (
+          <div>
+            <p className="text-sm font-bold text-white">{session?.user?.name || 'Usuario'}</p>
+            <p className="text-xs text-gray-400">{session?.user?.email || 'Correo no disponible'}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Menú desplegable de usuario */}
+      {dropdownOpen && menuOpen && (
+        <div className="absolute bottom-20 left-4 w-56 bg-gray-700 rounded-md shadow-lg py-1 z-50">
+          <button
+            onClick={() => router.push('/settings')}
+            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 w-full text-left"
+          >
+            Configuración
+          </button>
+          <button
+            onClick={() => signOut({ callbackUrl: '/' })}
+            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 w-full text-left"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      )}
+    </aside>
+  );
 }

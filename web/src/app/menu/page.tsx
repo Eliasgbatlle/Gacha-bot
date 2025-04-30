@@ -16,6 +16,7 @@ export default function Dashboard() {
     const [reputacion, setReputacion] = useState<number>(0);
     const [rankingScore, setRankingScore] = useState<number>(0);
     const [rankingPosition, setRankingPosition] = useState<number | null>(null);
+    const [globalRanking, setGlobalRanking] = useState<any[]>([]); // Añadido para el ranking global
 
     useEffect(() => {
         async function fetchPersonajes() {
@@ -69,6 +70,23 @@ export default function Dashboard() {
     }, [selectedServer]);
 
     useEffect(() => {
+        async function fetchGlobalRanking() {
+            try {
+                const response = await fetch('/api/gacha/server-ranking');
+                if (!response.ok) {
+                    throw new Error('Error al obtener el ranking global');
+                }
+                const data = await response.json();
+                setGlobalRanking(data.globalRankings || []);
+            } catch (error) {
+                console.error('Error al obtener el ranking global:', error);
+            }
+        }
+
+        fetchGlobalRanking();
+    }, []);
+
+    useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement | null;
             if (target && !target.closest('.relative')) {
@@ -82,6 +100,36 @@ export default function Dashboard() {
             document.removeEventListener('click', handleClickOutside);
         };
     }, []);
+
+    const handleGirar = async () => {
+        if (!selectedServer) {
+            alert('Por favor, selecciona un servidor primero.');
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/enviar-comando", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    serverId: selectedServer,
+                    comando: "/girar",
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Error al ejecutar el comando /girar");
+            }
+
+            const result = await response.json();
+            alert(`Resultado: ${result.message}`);
+        } catch (error) {
+            console.error("Error al ejecutar /girar:", error);
+            alert("Hubo un error al ejecutar el comando /girar.");
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex">
@@ -119,7 +167,7 @@ export default function Dashboard() {
                         </div>
                         <div className="bg-gray-800 p-4 rounded-lg">
                             <h4 className="text-lg font-bold">Ranking Global</h4>
-                            <p className="text-2xl font-bold text-indigo-400"></p>
+                            <p className="text-2xl font-bold text-indigo-400">{globalRanking && globalRanking.length > 0 ? `#${globalRanking[0].rank}` : 'N/A'}</p>
                         </div>
                     </div>
                 </section>
@@ -127,8 +175,8 @@ export default function Dashboard() {
                 <section className="mb-6">
                     <h3 className="text-xl font-bold mb-4">Acciones Rápidas</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg">Realizar Gacha</button>
-                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg">Reclamar Recompensa Diaria</button>
+                        <button onClick={handleGirar} className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg">Girar</button>
+                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg">Recompensa Diaria</button>
                         <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg">Ver Ranking</button>
                         <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg">Gestionar Economía</button>
                     </div>
