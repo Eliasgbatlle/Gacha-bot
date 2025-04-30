@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { authOptions } from '@/app/utils/authOptions';
 import Sidebar from '@/components/sidebar';
 import Servers from '@/components/Servers';
 
@@ -10,6 +12,7 @@ function formatNumberWithDots(number: number | null | undefined): string {
 }
 
 export default function Dashboard() {
+    const { data: session } = useSession();
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
     const [personajesColeccionados, setPersonajesColeccionados] = useState<number>(0);
     const [dineroAcumulado, setDineroAcumulado] = useState<number>(0);
@@ -107,27 +110,37 @@ export default function Dashboard() {
             return;
         }
 
+        if (!session || !session.user) {
+            alert('No se pudo obtener la sesión del usuario. Por favor, inicia sesión.');
+            return;
+        }
+
         try {
-            const response = await fetch("/api/enviar-comando", {
+            const response = await fetch("http://127.0.0.1:8000/api/discord/girar", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "X-User-ID": session.user.id, // ID del usuario desde la sesión
+                    "X-User-Name": session.user.name || "Usuario", // Nombre del usuario desde la sesión
                 },
                 body: JSON.stringify({
-                    serverId: selectedServer,
-                    comando: "/girar",
+                    server_id: selectedServer, // Usa el servidor seleccionado
                 }),
             });
 
             if (!response.ok) {
-                throw new Error("Error al ejecutar el comando /girar");
+                throw new Error("Error al ejecutar el comando girar");
             }
 
             const result = await response.json();
-            alert(`Resultado: ${result.message}`);
+            if (result.message) {
+                alert(`Resultado: ${result.message}`);
+            } else {
+                alert("No se recibió un mensaje válido del servidor.");
+            }
         } catch (error) {
-            console.error("Error al ejecutar /girar:", error);
-            alert("Hubo un error al ejecutar el comando /girar.");
+            console.error("Error al ejecutar girar:", error);
+            alert("Hubo un error al ejecutar el comando girar.");
         }
     };
 

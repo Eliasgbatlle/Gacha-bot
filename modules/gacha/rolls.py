@@ -124,6 +124,9 @@ class GachaRolls(commands.Cog):
     @bot.slash_command(name="girar", description="🎰 Gira la ruleta gacha para obtener un personaje")
     async def roll(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral=False)  # Indicar que el bot está procesando la interacción
+
+        # Log para verificar la ejecución del comando
+        print(f"Comando /girar ejecutado por el usuario {ctx.user.id} en el servidor {ctx.guild.id}")
     
         user_id = str(ctx.user.id)
         server_id = str(ctx.guild.id)

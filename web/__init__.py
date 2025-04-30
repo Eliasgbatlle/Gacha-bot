@@ -1,0 +1,1 @@
+# Este archivo indica que la carpeta 'web' es un paquete Python.
