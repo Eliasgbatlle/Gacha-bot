@@ -6,6 +6,12 @@ import { authOptions } from '@/app/utils/authOptions';
 import Sidebar from '@/components/sidebar';
 import Servers from '@/components/Servers';
 
+type GlobalRanking = {
+    rank: number;
+    name: string;
+    score?: number; // Agrega más propiedades según sea necesario
+};
+
 function formatNumberWithDots(number: number | null | undefined): string {
     if (number == null) return "0";
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -19,7 +25,7 @@ export default function Dashboard() {
     const [reputacion, setReputacion] = useState<number>(0);
     const [rankingScore, setRankingScore] = useState<number>(0);
     const [rankingPosition, setRankingPosition] = useState<number | null>(null);
-    const [globalRanking, setGlobalRanking] = useState<any[]>([]); // Añadido para el ranking global
+    const [globalRanking, setGlobalRanking] = useState<GlobalRanking[]>([]);
 
     useEffect(() => {
         async function fetchPersonajes() {
