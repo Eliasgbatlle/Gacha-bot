@@ -33,16 +33,15 @@ app.add_middleware(
 @app.post("/api/discord/girar")
 async def girar(request: Request, current_user: dict = Depends(get_current_user)):
     user_id = current_user.get("id")  # Obtener el ID del usuario desde la sesión activa
-    server_id = "1361806224634417446"  # ID del servidor (puedes obtenerlo dinámicamente si es necesario)
 
-    # Log para inicio del endpoint
-    print("[LOG] Inicio del endpoint /api/discord/girar")
+    body = await request.json()
+    server_id = body.get("server_id")  # Obtener el server_id directamente del cuerpo de la solicitud
 
-    # Log para verificar usuario autenticado
-    print(f"[LOG] Usuario autenticado: {user_id}")
+    if not server_id:
+        return {"error": "El ID del servidor no fue proporcionado."}
 
-    # Log para verificar servidor
-    print(f"[LOG] Buscando servidor con ID: {server_id}")
+    # Log para verificar si el servidor fue encontrado
+    print(f"[DEBUG] Intentando obtener el servidor con ID: {server_id}")
     guild = bot.get_guild(int(server_id))
     if not guild:
         print("[ERROR] No se pudo encontrar el servidor en Discord")
@@ -54,16 +53,15 @@ async def girar(request: Request, current_user: dict = Depends(get_current_user)
         permisos = c.permissions_for(guild.me)
         print(f"[LOG] - {c.name} (Enviar mensajes: {permisos.send_messages})")
 
-    # Log para buscar canal 'general'
-    print("[LOG] Buscando canal llamado 'general'")
+    # Log para verificar si se encontró un canal
+    print("[DEBUG] Buscando canal llamado 'general'")
     channel = discord.utils.get(guild.text_channels, name="general")
     if not channel:
         print("[WARNING] No se encontró un canal llamado 'general'. Buscando el primer canal disponible.")
         channel = next((c for c in guild.text_channels if c.permissions_for(guild.me).send_messages), None)
 
-    # Log para confirmar canal seleccionado
     if channel:
-        print(f"[LOG] Canal seleccionado: {channel.name} (ID: {channel.id})")
+        print(f"[DEBUG] Canal seleccionado: {channel.name} (ID: {channel.id})")
     else:
         print("[ERROR] No se pudo seleccionar un canal válido para enviar el mensaje.")
         return {"error": "No se pudo encontrar un canal de texto en el servidor"}
@@ -101,17 +99,17 @@ async def girar(request: Request, current_user: dict = Depends(get_current_user)
 
     interaction = FakeInteraction(member, guild)
 
-    # Log para verificar comando /girar
-    print("[LOG] Verificando si el comando /girar está registrado")
+    # Log para verificar si el comando /girar está registrado
+    print("[DEBUG] Verificando si el comando /girar está registrado")
     command = bot.get_command("girar")
     if not command:
         print("[ERROR] El comando /girar no está registrado en el bot.")
         return {"error": "El comando /girar no está registrado en el bot."}
-    print("[LOG] Comando /girar encontrado en el bot.")
+    print("[DEBUG] Comando /girar encontrado en el bot.")
 
-    # Log para ejecutar el comando /girar
+    # Log para verificar la ejecución del comando
     try:
-        print("[LOG] Ejecutando el comando /girar...")
+        print("[DEBUG] Ejecutando el comando /girar...")
         # Crear un contexto simulado para el comando
         class FakeContext:
             def __init__(self, interaction):
@@ -130,22 +128,22 @@ async def girar(request: Request, current_user: dict = Depends(get_current_user)
                         view = kwargs.get('view')
                         if embed or view:
                             await self.channel.send(embed=embed, view=view)
-                            print(f"[LOG] Mensaje enviado al canal {self.channel.name} con embed y view.")
+                            print(f"[DEBUG] Mensaje enviado al canal {self.channel.name} con embed y view.")
                         else:
                             await self.channel.send(*args, **kwargs)
-                            print(f"[LOG] Mensaje enviado al canal {self.channel.name} con contenido: {args}")
+                            print(f"[DEBUG] Mensaje enviado al canal {self.channel.name} con contenido: {args}")
 
                 self.followup = Followup(channel)
 
             async def respond(self, *args, **kwargs):
-                print(f"[LOG] Respuesta simulada: {args}, {kwargs}")
+                print(f"[DEBUG] Respuesta simulada: {args}, {kwargs}")
 
             async def defer(self, ephemeral=False):
-                print(f"[LOG] defer() llamado con ephemeral={ephemeral}")
+                print(f"[DEBUG] defer() llamado con ephemeral={ephemeral}")
 
         ctx = FakeContext(interaction)
         await command(ctx)
-        print("[LOG] Comando /girar ejecutado correctamente.")
+        print("[DEBUG] Comando /girar ejecutado correctamente.")
         return {"message": "Comando girar ejecutado correctamente"}
     except Exception as e:
         print(f"[ERROR] Error al ejecutar el comando /girar: {e}")

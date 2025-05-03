@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ruleta Gacha Probabilística</title>
+  <style>
+    body {
+      background: #111;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      color: white;
+    }
+
+    .roulette-container {
+      width: 600px;
+      overflow: hidden;
+      border: 4px solid #444;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    .roulette {
+      display: flex;
+      width: max-content;
+      will-change: transform;
+    }
+
+    .item {
+      width: 120px;
+      height: 120px;
+      margin: 10px;
+      border-radius: 8px;
+      background: gray;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .SSS { background: linear-gradient(45deg, red, yellow, cyan); color: black; }
+    .SS { background: linear-gradient(45deg, magenta, yellow); color: black; }
+    .S { background: gold; color: black; }
+    .A { background: #bf7fff; }
+    .B { background: #ffae42; }
+    .C { background: #4faaff; }
+    .D { background: #77dd77; }
+    .E { background: #999; }
+
+    button {
+      padding: 12px 30px;
+      background-color: #673ab7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 4px;
+      background-color: red;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="roulette-container">
+    <div class="marker"></div>
+    <div class="roulette" id="roulette"></div>
+  </div>
+
+  <button onclick="spinRoulette()">🎰 Girar</button>
+
+  <script>
+    const probabilidades = {
+      "SSS": 0.0001,
+      "SS": 0.001,
+      "S": 0.01,
+      "A": 0.07,
+      "B": 0.13,
+      "C": 0.18,
+      "D": 0.28,
+      "E": 0.3299
+    };
+
+    const totalItems = 300;
+    const rarezas = Object.keys(probabilidades);
+
+    function getRandomRareza() {
+      const r = Math.random();
+      let acumulado = 0;
+      for (const rareza of rarezas) {
+        acumulado += probabilidades[rareza];
+        if (r <= acumulado) return rareza;
+      }
+      return "E";
+    }
+
+    function crearItems() {
+      const roulette = document.getElementById("roulette");
+      roulette.innerHTML = '';
+      const items = [];
+
+      // Generar una vez
+      for (let i = 0; i < totalItems; i++) {
+        const rareza = getRandomRareza();
+        const item = document.createElement("div");
+        item.className = `item ${rareza}`;
+        item.innerText = rareza;
+        items.push(item);
+      }
+
+      // Duplicar para crear efecto infinito
+      for (let i = 0; i < 2; i++) {
+        items.forEach(item => {
+          roulette.appendChild(item.cloneNode(true));
+        });
+      }
+    }
+
+    function spinRoulette() {
+    const roulette = document.getElementById("roulette");
+    const items = document.querySelectorAll(".item");
+    const itemWidth = items[0].offsetWidth + 20;
+
+    const totalVisibleItems = items.length;
+    const stopAt = Math.floor(Math.random() * totalVisibleItems);
+
+    const moveX = stopAt * itemWidth;
+
+    // Transición más suave, duración más larga y easing lento
+    roulette.style.transition = 'transform 6s cubic-bezier(0.15, 0.85, 0.35, 1)';
+    roulette.style.transform = `translateX(-${moveX}px)`;
+
+    // Opcional: eliminar el reset forzado si no hay looping visual necesario
+    // O hacer un pequeño ajuste sin notarse
+    setTimeout(() => {
+        roulette.style.transition = 'none';
+        const offset = (stopAt % totalItems) * itemWidth;
+        roulette.style.transform = `translateX(-${offset}px)`;
+    }, 6100);
+    }
+
+
+    crearItems();
+  </script>
+</body>
+</html>
