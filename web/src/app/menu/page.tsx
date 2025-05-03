@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { authOptions } from '@/app/utils/authOptions';
 import Servers from '@/components/Servers';
+import Roulette from '@/components/roulette';
 
 type GlobalRanking = {
     rank: number;
@@ -25,6 +26,7 @@ export default function game() {
     const [rankingScore, setRankingScore] = useState<number>(0);
     const [rankingPosition, setRankingPosition] = useState<number | null>(null);
     const [globalRanking, setGlobalRanking] = useState<GlobalRanking[]>([]);
+    const [showRoulette, setShowRoulette] = useState(false);
 
     useEffect(() => {
         async function fetchPersonajes() {
@@ -109,6 +111,23 @@ export default function game() {
         };
     }, []);
 
+    useEffect(() => {
+        const video = document.getElementById('background-video') as HTMLVideoElement | null;
+        if (!video) return;
+
+        video.addEventListener('ended', () => {
+            video.currentTime = 0;
+            video.play();
+        });
+
+        return () => {
+            video.removeEventListener('ended', () => {
+                video.currentTime = 0;
+                video.play();
+            });
+        };
+    }, []);
+
     const handleGirar = async () => {
         if (!selectedServer) {
             alert('Por favor, selecciona un servidor primero.');
@@ -165,10 +184,16 @@ export default function game() {
         }
     };
 
+    const handleRoulette = async () => {
+        setShowRoulette(true);
+
+        // Eliminar el cierre automático después de un tiempo
+    };
+
     return (
         <div>
-            <video loop autoPlay muted className="absolute top-0 left-0 w-full h-full object-cover z-0">
-                <source src="https://res.cloudinary.com/dhjjcwtlk/video/upload/v1746235561/ub1adqitfhlxub1ixuke.mp4" type="video/mp4" />
+            <video loop autoPlay muted className="absolute top-0 left-0 w-full h-full object-cover z-0" id="background-video">
+                <source src="https://res.cloudinary.com/dhjjcwtlk/video/upload/v1746249100/A_dramatic_anime_scene_where_a_female_samurai_stands_still_while_her_long_white_hair_flows_with_the_wind._Her_red_eyes_glow_subtly._The_background_flickers_with_mystical_blue_lights_and_faint_mist_moves_through_the_hmkoli.mp4" type="video/mp4" />
                 Tu navegador no soporta la reproducción de videos.
             </video>
 
@@ -193,14 +218,14 @@ export default function game() {
                 </section>
 
                 {/* Main Buttons */}
-                <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex space-x-4">
+                <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex space-x-4 z-20">
                     <button onClick={handleGirar} className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
                         Girar
                     </button>
                     <button className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
                         Recompensa Diaria
                     </button>
-                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
+                    <button onClick={handleRoulette} className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
                         Ver Ranking
                     </button>
                     <button className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
@@ -227,16 +252,40 @@ export default function game() {
                 <Servers onSelectServer={(server: string) => setSelectedServer(server)} />
             </div>
 
-            {/*
+            {showRoulette && (
+                <div
+                    className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 animate-fade-in ${showRoulette ? 'backdrop-blur-md' : ''}`}
+                    style={{ backgroundColor: 'transparent' }}
+                >
+                    <Roulette setShowRoulette={setShowRoulette} />
+                </div>
+            )}
+
+            {/* 
             <section>
                 <h3 className="text-xl font-bold mb-4">Últimos Eventos</h3>
                 <div className="bg-gray-800 p-4 rounded-lg">
                     <p className="text-gray-400">No hay eventos recientes.</p>
                 </div>
             </section>
-            */}         
+            */}
 
             <style jsx>{`
+                @keyframes fade-in {
+                    from {
+                        opacity: 0;
+                        transform: scale(0.9);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+
+                .animate-fade-in {
+                    animation: fade-in 0.5s ease-out;
+                }
+
                 @keyframes fadeIn {
                     from {
                         opacity: 0;
@@ -285,5 +334,4 @@ export default function game() {
             `}</style>
         </div>
     );
-    
 }
