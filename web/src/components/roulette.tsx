@@ -86,6 +86,20 @@ export default function Roulette({ setShowRoulette, handleGirar }: RouletteProps
     }
   }, [isPremioReady]); // Ejecutar handleRoulette solo cuando premio esté listo
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showButtons) {
+        setShowRoulette(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showButtons]);
+
   const fetchPremio = async () => {
     try {
       const response = await fetch('http://127.0.0.1:8000/api/discord/get-personaje', {

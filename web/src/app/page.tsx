@@ -99,14 +99,14 @@ export default function HomePage() {
                             Un bot de Discord donde puedes coleccionar personajes, competir con amigos y subir en el ranking.
                         </p>
                         
-                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                        <div className="flex flex-col sm:flex-row justify-center gap-4" >
                             <motion.a
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                href="#play-now"
+                                href="/menu" // Cambiar la redirección a /menu
                                 className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-bold text-lg transition-colors flex items-center justify-center gap-2"
                             >
-                                Jugar Ahora <ChevronRight className="w-5 h-5" />
+                                Jugar Ahora
                             </motion.a>
                             
                             {!session && (
@@ -363,7 +363,7 @@ export default function HomePage() {
                         >
                             {session ? (
                                 <a
-                                    href="#play-now"
+                                    href="/menu" // Cambiar la redirección a /menu
                                     className="px-8 py-4 bg-white hover:bg-gray-100 rounded-lg text-gray-900 font-bold text-lg transition-colors flex items-center justify-center gap-2 mx-auto"
                                 >
                                     Jugar Ahora <ChevronRight className="w-5 h-5" />

@@ -65,7 +65,7 @@ export default function Navbar() {
                                         onClick={() => router.push('/menu')} // Redirige al dashboard
                                         className="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-colors"
                                     >
-                                        Dashboard
+                                        Jugar
                                     </button>
                                 )}
                                 {session.user?.image && (

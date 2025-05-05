@@ -5,7 +5,9 @@ import { useSession } from 'next-auth/react';
 import { authOptions } from '@/app/utils/authOptions';
 import Servers from '@/components/Servers';
 import Roulette from '@/components/roulette';
+import UserProfile from '@/components/UserProfile';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 type GlobalRanking = {
     rank: number;
@@ -28,6 +30,8 @@ export default function game() {
     const [rankingPosition, setRankingPosition] = useState<number | null>(null);
     const [globalRanking, setGlobalRanking] = useState<GlobalRanking[]>([]);
     const [showRoulette, setShowRoulette] = useState(false);
+    const [showCard, setShowCard] = useState(false);
+    const [showUserProfile, setShowUserProfile] = useState(false);
 
     useEffect(() => {
         async function fetchPersonajes() {
@@ -259,7 +263,7 @@ export default function game() {
             {/* Main Content */}
             <main className="flex-1 p-6">
                 <header className="flex justify-between items-center mb-6 absolute bottom-20 left-1/2 transform -translate-x-1/2">
-                    <h2 className="text-3xl font-bold">Bienvenido al Dashboard</h2>
+                    <h2 className="text-3xl font-bold">Bienvenido a GachaBot</h2>
                 </header>
 
                 {/* Sections */}
@@ -279,23 +283,23 @@ export default function game() {
                 {/* Main Buttons */}
                 <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex space-x-4 z-20">
                     <div className="menu-button">
-                        <Image src="/icons/inventory.png" alt="Banco" width={40} height={40} />
+                        <Image src="/icons8-bank-96.png" alt="Banco" width={40} height={40} />
                         Banco
                     </div>
                     <div className="menu-button button-wrapper">
-                        <Image src="/icons/recruit.png" alt="Tienda" width={40} height={40} />
+                        <Image src="/icons8-shopping-trolley-96.png" alt="Tienda" width={40} height={40} />
                         Tienda
                     </div>
                     <div className="menu-button">
-                        <Image src="/icons/inventory.png" alt="Trabajos" width={40} height={40} />
+                        <Image src="/icons8-cash-96.png" alt="Trabajos" width={40} height={40} />
                         Trabajos
                     </div>
                     <div className="menu-button">
-                        <Image src="/icons/inventory.png" alt="Squad" width={40} height={40} />
+                        <Image src="/icons8-team-96.png" alt="Squad" width={40} height={40} />
                         Squad
                     </div>
                     <div className="menu-button button-wrapper">
-                        <Image src="/icons/recruit.png" alt="Equipo" width={40} height={40} />
+                        <Image src="/icons8-bulletproof-96.png" alt="Equipo" width={40} height={40} />
                         Equipo
                         <span className="dot"></span>
                     </div>
@@ -333,7 +337,10 @@ export default function game() {
             </div>
 
             {/* User Profile in Bottom Right */}
-            <div className="absolute bottom-4 right-4 flex flex-col items-center space-y-2 z-20">
+            <div
+                className="absolute bottom-8 right-8 flex flex-col items-center space-y-2 z-20 cursor-pointer"
+                onClick={() => setShowUserProfile(true)}
+            >
                 <div className="relative w-16 h-16">
                     <Image
                         src={session?.user?.image || '/path/to/default-image.jpg'} // Usar la imagen de la sesión o una predeterminada
@@ -347,6 +354,29 @@ export default function game() {
                     </span>
                 </div>
             </div>
+
+            {showUserProfile && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                    <div className="bg-white p-4 rounded-lg shadow-lg relative">
+                        <button
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                            onClick={() => setShowUserProfile(false)}
+                        >
+                            ✖
+                        </button>
+                        <UserProfile
+                            avatar={session?.user?.image || '/path/to/default-image.jpg'}
+                            nickname={session?.user?.name || 'Usuario'}
+                            id={session?.user?.id || 'N/A'}
+                            server={selectedServer || 'N/A'}
+                            squadPower={12345.678} // Example value
+                            nikkeObtained={42} // Example value
+                            costume={5} // Example value
+                            nikkeDistribution={["/path/to/nikke1.jpg", "/path/to/nikke2.jpg"]} // Example values
+                        />
+                    </div>
+                </div>
+            )}
 
             {showRoulette && (
                 <div
@@ -472,4 +502,5 @@ export default function game() {
             `}</style>
         </div>
     );
+    
 }
