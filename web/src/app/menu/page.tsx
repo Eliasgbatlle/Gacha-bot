@@ -139,6 +139,11 @@ export default function game() {
             return;
         }
 
+        if (dineroAcumulado < 500) {
+            alert('❌ No tienes suficientes monedas para tirar un roll. Necesitas 500 monedas.');
+            return;
+        }
+
         try {
             // Obtener el server_id desde el nuevo endpoint
             const serverIdResponse = await fetch("/api/discord/get-server-id", {
@@ -155,7 +160,9 @@ export default function game() {
 
             const { server_id } = await serverIdResponse.json();
 
-            // Enviar la solicitud al endpoint girar con el server_id
+            // Llamar a handleRoulette antes de verificar la respuesta
+            await handleRoulette();
+
             const response = await fetch("http://127.0.0.1:8000/api/discord/girar", {
                 method: "POST",
                 headers: {
@@ -165,6 +172,7 @@ export default function game() {
                 },
                 body: JSON.stringify({
                     server_id: server_id, // Usar el server_id obtenido
+                    source: 'web', // Indicar que la solicitud proviene de la web
                 }),
             });
 
@@ -181,6 +189,56 @@ export default function game() {
         } catch (error) {
             console.error("Error al ejecutar girar:", error);
             alert("Hubo un error al ejecutar el comando girar.");
+        }
+    };
+
+    const handleRecompensaDiaria = async () => {
+        if (!selectedServer) {
+            alert('Por favor, selecciona un servidor primero.');
+            return;
+        }
+
+        if (!session || !session.user) {
+            alert('No se pudo obtener la sesión del usuario. Por favor, inicia sesión.');
+            return;
+        }
+
+        try {
+            // Obtener el server_id desde el nuevo endpoint
+            const serverIdResponse = await fetch("/api/discord/get-server-id", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ server_name: selectedServer }),
+            });
+
+            if (!serverIdResponse.ok) {
+                throw new Error("Error al obtener el ID del servidor");
+            }
+
+            const { server_id } = await serverIdResponse.json();
+
+            const response = await fetch('http://127.0.0.1:8000/api/recompensa-diaria', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: session.user.id, // Corrected parameter name
+                    server_id: server_id, // Usar el server_id obtenido
+                }),
+            });
+
+            const result = await response.json();
+            if (result.error) {
+                alert(result.message);
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error al reclamar la recompensa diaria:', error);
+            alert('Hubo un error al reclamar la recompensa diaria.');
         }
     };
 
@@ -222,10 +280,10 @@ export default function game() {
                     <button onClick={handleGirar} className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
                         Girar
                     </button>
-                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
+                    <button onClick={handleRecompensaDiaria} className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
                         Recompensa Diaria
                     </button>
-                    <button onClick={handleRoulette} className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
+                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
                         Ver Ranking
                     </button>
                     <button className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
@@ -257,7 +315,7 @@ export default function game() {
                     className={`fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 animate-fade-in ${showRoulette ? 'backdrop-blur-md' : ''}`}
                     style={{ backgroundColor: 'transparent' }}
                 >
-                    <Roulette setShowRoulette={setShowRoulette} />
+                    <Roulette setShowRoulette={setShowRoulette} handleGirar={handleGirar} />
                 </div>
             )}
 

@@ -4,13 +4,20 @@ import sys
 from dotenv import load_dotenv
 from utils.database import Database
 from utils.databasechar import crear_base_de_datos, generar_personajes, TOTAL_PERSONAJES
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from utils.auth import get_current_user
 import uvicorn
 import asyncio
-from modules.gacha.rolls import bot
+from modules.gacha.rolls import bot, GachaRolls, personaje_actual
 import nest_asyncio
+from utils.state_manager import StateManager
+from discord.ext import commands
+import logging
+from datetime import timedelta
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
 
 # Agregar la carpeta raíz del proyecto al sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -30,13 +37,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+db = Database()
+
 @app.post("/api/discord/girar")
 async def girar(request: Request, current_user: dict = Depends(get_current_user)):
     user_id = current_user.get("id")  # Obtener el ID del usuario desde la sesión activa
 
     body = await request.json()
     server_id = body.get("server_id")  # Obtener el server_id directamente del cuerpo de la solicitud
-
+    source = body.get("source")  # Obtener el source directamente del cuerpo de la solicitud
+    
+    # Log para verificar el cuerpo completo de la solicitud
+    print(f"[DEBUG] Cuerpo de la solicitud recibido: {body}")
+    
     if not server_id:
         return {"error": "El ID del servidor no fue proporcionado."}
 
@@ -46,6 +59,15 @@ async def girar(request: Request, current_user: dict = Depends(get_current_user)
     if not guild:
         print("[ERROR] No se pudo encontrar el servidor en Discord")
         return {"error": "No se pudo encontrar el servidor en Discord"}
+
+    if not source:
+        return {"error": "El origen no fue proporcionado."}
+
+    # Log para verificar si el obtener fue encontrado
+    print(f"[DEBUG] Intentando obtener el origen: {source}")
+
+    # Obtener la instancia de GachaRolls
+    gacha_rolls = next((cog for cog in bot.cogs.values() if isinstance(cog, GachaRolls)), None)
 
     # Log para listar canales disponibles
     print("[LOG] Canales disponibles en el servidor:")
@@ -112,10 +134,11 @@ async def girar(request: Request, current_user: dict = Depends(get_current_user)
         print("[DEBUG] Ejecutando el comando /girar...")
         # Crear un contexto simulado para el comando
         class FakeContext:
-            def __init__(self, interaction):
+            def __init__(self, interaction, source):
                 self.interaction = interaction
                 self.user = interaction.user
                 self.guild = interaction.guild
+                self.source = source
 
                 # Ajustar el atributo followup para que sea un objeto directamente accesible
                 class Followup:
@@ -141,13 +164,102 @@ async def girar(request: Request, current_user: dict = Depends(get_current_user)
             async def defer(self, ephemeral=False):
                 print(f"[DEBUG] defer() llamado con ephemeral={ephemeral}")
 
-        ctx = FakeContext(interaction)
+        ctx = FakeContext(interaction, source=source)
+
+        # Consumir datos del personaje desde la cola
+
         await command(ctx)
         print("[DEBUG] Comando /girar ejecutado correctamente.")
         return {"message": "Comando girar ejecutado correctamente"}
     except Exception as e:
         print(f"[ERROR] Error al ejecutar el comando /girar: {e}")
         return {"error": f"Error al ejecutar el comando /girar: {str(e)}"}
+
+@app.get("/api/discord/get-personaje")
+async def get_personaje():
+    """Endpoint para obtener los datos del personaje desde la cola."""
+
+    # Obtener el personaje desde el contenedor de estado
+    personaje_actual = StateManager.get("personaje_actual")
+
+    if personaje_actual is None:
+        print("[DEBUG] No hay datos del personaje disponibles actualmente.")
+        return {"error": "No hay datos del personaje disponibles. Intenta nuevamente más tarde."}
+
+    print(f"[DEBUG] Datos del personaje obtenidos: {personaje_actual}")
+    return personaje_actual
+
+@app.post("/api/recompensa-diaria")
+async def recompensa_diaria(request: Request):
+    logger.info("Endpoint /api/recompensa-diaria llamado.")
+    try:
+        body = await request.json()
+        user_id = body.get("user_id")
+        server_id = body.get("server_id")
+
+        logger.debug(f"Datos recibidos: user_id={user_id}, server_id={server_id}.")
+
+        if not user_id or not server_id:
+            logger.error("Faltan user_id o server_id en la solicitud.")
+            raise HTTPException(status_code=400, detail="user_id and server_id are required.")
+
+        # Obtener el servidor de Discord
+        guild = bot.get_guild(int(server_id))
+        if not guild:
+            logger.error(f"Servidor con ID {server_id} no encontrado.")
+            raise HTTPException(status_code=404, detail="Servidor no encontrado.")
+
+        # Obtener el miembro de Discord
+        member = guild.get_member(int(user_id))
+        if not member:
+            logger.error(f"Usuario con ID {user_id} no encontrado en el servidor {server_id}.")
+            raise HTTPException(status_code=404, detail="Usuario no encontrado en el servidor.")
+
+        logger.debug(f"Usuario {user_id} encontrado en el servidor {server_id}.")
+
+        # Crear un contexto simulado para el comando
+        class FakeInteraction:
+            def __init__(self, user, guild, bot):
+                self.user = user
+                self.guild = guild
+                self.bot = bot
+                self.author = user  # Agregar atributo author para compatibilidad con comandos
+                self.interaction = self  # Agregar atributo interaction para compatibilidad con comandos
+                self.data = {}  # Agregar atributo data para compatibilidad con comandos
+
+            async def respond(self, content, ephemeral=False):
+                self.response = content
+
+        interaction = FakeInteraction(member, guild, bot)
+
+        # Obtener el comando recompensa_diaria
+        command = bot.get_command("recompensa_diaria")
+        if not command:
+            logger.error("Comando recompensa_diaria no encontrado.")
+            raise HTTPException(status_code=500, detail="Comando recompensa_diaria no encontrado.")
+
+        logger.debug("Ejecutando el comando recompensa_diaria.")
+
+        # Ejecutar el comando respetando la lógica de enfriamiento
+        try:
+            await command.invoke(interaction)
+            logger.info("Comando recompensa_diaria ejecutado correctamente.")
+            return {"message": interaction.response}
+        except commands.CommandOnCooldown as cooldown_error:
+            retry_after = timedelta(seconds=cooldown_error.retry_after)
+            hours, remainder = divmod(retry_after.seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            logger.warning(f"Comando en cooldown. Tiempo restante: {hours}h {minutes}m {seconds}s.")
+            return {
+                "error": "Comando en cooldown.",
+                "message": f"⏳ Ya reclamaste tu recompensa diaria. Vuelve en {hours} horas, {minutes} minutos y {seconds} segundos."
+            }
+        except Exception as e:
+            logger.error(f"Error inesperado al ejecutar el comando: {e}")
+            raise HTTPException(status_code=500, detail=f"Error al ejecutar el comando: {str(e)}")
+    except Exception as e:
+        logger.critical(f"Error crítico en el endpoint /api/recompensa-diaria: {e}")
+        raise HTTPException(status_code=500, detail=f"Error crítico: {str(e)}")
 
 crear_base_de_datos()
 generar_personajes(TOTAL_PERSONAJES) 

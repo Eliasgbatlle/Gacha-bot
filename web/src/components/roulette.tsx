@@ -15,8 +15,9 @@ const probabilidades = {
 
 const clases = Object.entries(probabilidades);
 
-function generarItems(cantidad: number = 300) {
+function generarItems(cantidad: number = 300, premio: string) {
   const items = [];
+
   while (items.length < cantidad) {
     const rand = Math.random();
     let suma = 0;
@@ -29,49 +30,117 @@ function generarItems(cantidad: number = 300) {
     }
   }
 
+  // Insertar el premio en el centro visual (por ejemplo, posición 150)
+  const centro = Math.floor(cantidad / 2);
+  items[centro] = { rareza: premio };
+
   return items;
 }
 
 type RouletteProps = {
   setShowRoulette: React.Dispatch<React.SetStateAction<boolean>>;
+  handleGirar: () => Promise<void>; // Agregar handleGirar como prop
 };
 
-export default function Roulette({ setShowRoulette }: RouletteProps) {
-  const [items, setItems] = useState(() => generarItems(300));
+export default function Roulette({ setShowRoulette, handleGirar }: RouletteProps) {
+  const [premio, setPremio] = useState<string | null>(null); // Estado para manejar el valor de premio
+  const [isPremioReady, setIsPremioReady] = useState(false); // Estado para verificar si premio está listo
+  const [items, setItems] = useState(() => generarItems(300, 'A'));
   const rouletteRef = useRef<HTMLDivElement>(null);
-  const [showRoulette, setShowRouletteState] = useState(true);
   const [showButtons, setShowButtons] = useState(false);
+  const [isHandlingRoulette, setIsHandlingRoulette] = useState(false);
+  const hasSpun = useRef(false); // Evita doble ejecución
 
   useEffect(() => {
-    // Ejecutar el giro automáticamente al montar el componente
-    handleRoulette();
+    const fetchPersonaje = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/discord/get-personaje', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Error al obtener el personaje');
+        }
+        const personaje = await response.json();
+        console.log('Personaje obtenido:', personaje);
+
+        // Actualizar el estado de premio con la rareza obtenida
+        if (personaje && personaje.rareza) {
+          setPremio(personaje.rareza);
+          setIsPremioReady(true); // Marcar que premio está listo
+        }
+      } catch (error) {
+        console.error('Error al obtener el personaje:', error);
+      }
+    };
+
+    fetchPersonaje();
   }, []);
 
-  if (!showRoulette) {
-    return null; // No renderizar nada si showRoulette es false
-  }
+  useEffect(() => {
+    if (isPremioReady && !hasSpun.current) {
+      hasSpun.current = true;
+      handleRoulette();
+    }
+  }, [isPremioReady]); // Ejecutar handleRoulette solo cuando premio esté listo
+
+  const fetchPremio = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/discord/get-personaje', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Error al obtener el personaje');
+      }
+      const personaje = await response.json();
+      console.log('Personaje obtenido:', personaje);
+
+      // Actualizar el estado de premio con la rareza obtenida
+      if (personaje && personaje.rareza) {
+        setPremio(personaje.rareza);
+        setIsPremioReady(true); // Marcar que premio está listo
+      }
+    } catch (error) {
+      console.error('Error al obtener el personaje:', error);
+    }
+  };
 
   const handleRoulette = async () => {
-    setShowRouletteState(true);
+    await fetchPremio(); // Llamar al endpoint para obtener un nuevo premio
 
-    // Generar nuevas rarezas solo cuando hay un giro
-    setItems(generarItems(300));
+    if (!premio) {
+      console.error('El valor de premio aún no está disponible.');
+      return;
+    }
+
+    if (isHandlingRoulette) return;
+    setIsHandlingRoulette(true);
+
+    const nuevosItems = generarItems(300, premio);
+    setItems(nuevosItems);
+
+    const roulette = rouletteRef.current;
+    if (roulette) {
+      roulette.style.transition = 'none';
+      roulette.style.transform = 'translateX(0)';
+    }
 
     setTimeout(() => {
       spinRoulette();
-    }, 500); // 1 segundo de espera
-
-    const rouletteDuration = 6000; // Duración de la animación en milisegundos
+    }, 500);
 
     setTimeout(() => {
       setShowButtons(true);
-    }, rouletteDuration + 1000); // 1 segundo de espera + duración del giro
+      setIsHandlingRoulette(false);
+    }, 7000);
   };
 
-  let isSpinning = false;
-
   const spinRoulette = () => {
-    isSpinning = true;
     const roulette = rouletteRef.current;
     if (!roulette) return;
 
@@ -82,17 +151,11 @@ export default function Roulette({ setShowRoulette }: RouletteProps) {
     const containerWidth = 800;
     const centerOffset = containerWidth / 2 - itemWidth / 2;
 
-    const stopAt = Math.floor(Math.random() * items.length);
-    const moveX = stopAt * itemWidth - centerOffset;
+    const centro = Math.floor(items.length / 2);
+    const moveX = centro * itemWidth - centerOffset;
 
     roulette.style.transition = 'transform 6s cubic-bezier(0.1, 0.9, 0.3, 1)';
     roulette.style.transform = `translateX(-${moveX}px)`;
-
-    setTimeout(() => {
-      roulette.style.transition = 'none';
-      roulette.style.transform = `translateX(-${moveX}px)`;
-      isSpinning = false;
-    }, 6000);
   };
 
   const getColor = (rareza: string) => {
@@ -116,6 +179,19 @@ export default function Roulette({ setShowRoulette }: RouletteProps) {
     }
   };
 
+  const handleButtonClick = async () => {
+    setShowButtons(false);
+
+    // Ejecutar handleGirar para cambiar el valor del endpoint
+    const girarPromise = handleGirar(); // No esperamos aquí para que el delay interno continúe
+
+    // Ejecutar handleRoulette inmediatamente después de que el endpoint cambie
+    await handleRoulette();
+
+    // Esperar a que handleGirar termine (incluido su delay interno)
+    await girarPromise;
+  };
+
   return (
     <div
       style={{
@@ -125,12 +201,12 @@ export default function Roulette({ setShowRoulette }: RouletteProps) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'transparent', // Fondo completamente transparente
+        backgroundColor: 'transparent',
         position: 'relative',
         fontFamily: 'sans-serif',
       }}
     >
-      {/* Aguja central */}
+      {/* Aguja */}
       <div
         style={{
           position: 'absolute',
@@ -154,16 +230,10 @@ export default function Roulette({ setShowRoulette }: RouletteProps) {
           borderRadius: '10px',
           background: 'linear-gradient(to left, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5) 10%, rgba(0, 0, 0, 0.5) 90%, rgba(0, 0, 0, 0))',
           WebkitMaskImage:
-          'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
-          maskImage:
-          'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
-          WebkitMaskSize: '100% 100%',
-          maskSize: '100% 100%',
-          WebkitMaskRepeat: 'no-repeat',
-          maskRepeat: 'no-repeat',
+            'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
         }}
       >
-        <div style={{ display: 'flex'}} ref={rouletteRef}>
+        <div style={{ display: 'flex' }} ref={rouletteRef}>
           {items.map((item, i) => (
             <div
               key={i}
@@ -195,15 +265,12 @@ export default function Roulette({ setShowRoulette }: RouletteProps) {
           marginTop: '20px',
           display: 'flex',
           gap: '10px',
-          visibility: showButtons ? 'visible' : 'hidden', // Hacer invisibles los botones cuando no estén habilitados
-          pointerEvents: showButtons ? 'auto' : 'none', // Bloquear interacción cuando no estén habilitados
+          visibility: showButtons ? 'visible' : 'hidden',
         }}
       >
-        <button
-          onClick={() => {
-            setShowButtons(false);
-            handleRoulette();
-          }}
+        {/* Eliminado el botón "Volver a girar" */}
+        {/* <button
+          onClick={handleButtonClick}
           style={{
             backgroundColor: '#6b21a8',
             color: 'white',
@@ -215,7 +282,7 @@ export default function Roulette({ setShowRoulette }: RouletteProps) {
           }}
         >
           Volver a girar
-        </button>
+        </button> */}
         <button
           onClick={() => setShowRoulette(false)}
           style={{

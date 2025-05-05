@@ -89,6 +89,40 @@ class Database:
 
             return user
 
+    def can_claim_daily(self, user_id: str, server_id: str) -> (bool, str):
+        """Verifica si un usuario puede reclamar la recompensa diaria."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT last_daily FROM users WHERE user_id = ? AND server_id = ?",
+                (user_id, server_id)
+            )
+            result = cursor.fetchone()
+
+            if not result or not result["last_daily"]:
+                return True, ""
+
+            last_daily = datetime.strptime(result["last_daily"], "%Y-%m-%dT%H:%M:%S")
+            now = datetime.now()
+
+            if (now - last_daily).total_seconds() >= 24 * 60 * 60:
+                return True, ""
+
+            remaining_time = 24 * 60 * 60 - (now - last_daily).total_seconds()
+            hours = int(remaining_time // 3600)
+            minutes = int((remaining_time % 3600) // 60)
+            return False, f"⏳ Ya reclamaste hoy. Vuelve en {hours} horas y {minutes} minutos."
+
+    def update_daily_claim(self, user_id: str, server_id: str):
+        """Actualiza la fecha de la última reclamación diaria de un usuario."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE users SET last_daily = ? WHERE user_id = ? AND server_id = ?",
+                (datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), user_id, server_id)
+            )
+            conn.commit()
+
     # --- Métodos para 'characters' ---
     def add_character(self, character_data: dict):
         """Añade un personaje a la DB."""

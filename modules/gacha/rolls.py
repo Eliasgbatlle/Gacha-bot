@@ -8,7 +8,16 @@ from discord.ext import commands
 from utils.databasechar import obtener_todos_los_personajes, precio_por_rareza
 from utils.database import Database
 from datetime import datetime, timedelta
+from utils.state_manager import StateManager
 
+# Variable global para almacenar los datos del personaje de forma persistente
+personaje_actual = None
+
+# Modificar el comando /girar para actualizar `personaje_actual`
+async def actualizar_personaje_actual(personaje):
+    global personaje_actual
+    personaje_actual = personaje
+    print("[DEBUG] Datos del personaje actualizados en la variable global desde rolls.py.")
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -121,53 +130,86 @@ class GachaRolls(commands.Cog):
         print("⚠️ No hay personajes disponibles en el pool.")
         return None
     
+    def obtener_personaje_para_web(self, user_id):
+        """Devuelve los datos del personaje generado para un usuario específico."""
+        return self.user_rolls.get(user_id, None)
+    
     @bot.slash_command(name="girar", description="🎰 Gira la ruleta gacha para obtener un personaje")
     async def roll(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral=False)  # Indicar que el bot está procesando la interacción
 
+        # Verificar si el atributo `source` existe en el contexto
+        source = getattr(ctx, 'source', 'discord')
+        print(repr(f"Fuente detectada: {source}"))
+
         # Log para verificar la ejecución del comando
-        print(f"Comando /girar ejecutado por el usuario {ctx.user.id} en el servidor {ctx.guild.id}")
-    
+        print(repr(f"Comando /girar ejecutado por el usuario {ctx.user.id} en el servidor {ctx.guild.id} desde {source}"))
+
+        if source == "web":
+            print(repr("La solicitud proviene de la web"))
+        else:
+            print(repr("La solicitud proviene de Discord"))
+
         user_id = str(ctx.user.id)
         server_id = str(ctx.guild.id)
         db = Database()
-    
+
         roll_price = 500
         user = db.get_user(user_id, server_id)
         if user["coins"] < roll_price:
             await ctx.respond(f"❌ No tienes suficientes monedas para tirar un roll. Necesitas {roll_price} monedas.", ephemeral=True)
             return
-    
+
         db.update_user(user_id, server_id, {"coins": user["coins"] - roll_price})
-    
+
         personajes = obtener_todos_los_personajes()
         if not personajes:
             await ctx.respond("❌ No hay personajes disponibles en el gacha.", ephemeral=True)
             return
-    
+
         personaje = self.probabilidad_personaje_roll(personajes)
         if personaje is None:
             await ctx.respond("⚠️ No hay personajes disponibles en el pool para este roll. Intenta más tarde.", ephemeral=True)
             return
-    
+
         # Continuar con la lógica si se seleccionó un personaje
         self.user_rolls[user_id] = personaje
-    
+
+        # Actualizar la variable global `personaje_actual` con la rareza del personaje
+        personaje_actual = {
+            "nombre": personaje["nombre"],
+            "serie": personaje["serie"],
+            "rareza": personaje["rareza"]
+        }
+        print(personaje_actual)
+
+        # Almacenar el personaje generado en el contenedor de estado
+        StateManager.set("personaje_actual", {
+            "nombre": personaje["nombre"],
+            "serie": personaje["serie"],
+            "rareza": personaje["rareza"]
+        })
+        print("[DEBUG] Personaje almacenado en el contenedor de estado.")
+
         # Depuración: imprimir el género del personaje
         print(f"🔍 Género del personaje: {personaje.get('genero', 'No definido')}")
-    
+
         # Buscar imagen del personaje usando Gelbooru solo si es femenino
         if personaje.get("genero", "").lower() == "female":
             imagen_url = obtener_imagen_gelbooru(personaje["nombre"], personaje.get("serie"))
             personaje["imagen"] = imagen_url if imagen_url else personaje.get("imagen", None)
         else:
             personaje["imagen"] = personaje.get("imagen", None)  # Usar la imagen almacenada en la tabla
-    
+
         # Añadir protección de 20 segundos
         roll_id = f"{user_id}_{datetime.now().timestamp()}"
         self.protected_rolls[roll_id] = (user_id, datetime.now() + timedelta(seconds=20))
         self.roll_prices[roll_id] = roll_price
-    
+
+        if source == "web":
+            print("[DEBUG] La solicitud proviene de la web. Agregando un delay de 5 segundos antes de enviar el mensaje.")
+            await asyncio.sleep(6)  # Agregar un delay de 4 segundos si la solicitud proviene de la web
+
         embed = discord.Embed(
             title=f"⭐ ¡Has obtenido a {personaje['nombre']}!",
             description=f"Serie: {personaje['serie']}\nRareza: {personaje['rareza']}",
@@ -177,7 +219,7 @@ class GachaRolls(commands.Cog):
             embed.set_image(url=personaje["imagen"])
         else:
             embed.set_footer(text="No se encontró una imagen para este personaje.")
-    
+
         view = self.ClaimView(personaje, user_id, db, roll_id, self)
         await ctx.followup.send(embed=embed, view=view)  # Usar followup para enviar el mensaje después de defer
 
