@@ -11,6 +11,7 @@ const nextConfig = {
           hostname: 'cdn.myanimelist.net',
         },
       ],
+      domains: ['img.icons8.com'], // Agregar el dominio permitido
     },
   };
   

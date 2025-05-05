@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { authOptions } from '@/app/utils/authOptions';
 import Servers from '@/components/Servers';
 import Roulette from '@/components/roulette';
+import Image from 'next/image';
 
 type GlobalRanking = {
     rank: number;
@@ -277,18 +278,39 @@ export default function game() {
 
                 {/* Main Buttons */}
                 <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex space-x-4 z-20">
-                    <button onClick={handleGirar} className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
+                    <div className="menu-button">
+                        <Image src="/icons/inventory.png" alt="Banco" width={40} height={40} />
+                        Banco
+                    </div>
+                    <div className="menu-button button-wrapper">
+                        <Image src="/icons/recruit.png" alt="Tienda" width={40} height={40} />
+                        Tienda
+                    </div>
+                    <div className="menu-button">
+                        <Image src="/icons/inventory.png" alt="Trabajos" width={40} height={40} />
+                        Trabajos
+                    </div>
+                    <div className="menu-button">
+                        <Image src="/icons/inventory.png" alt="Squad" width={40} height={40} />
+                        Squad
+                    </div>
+                    <div className="menu-button button-wrapper">
+                        <Image src="/icons/recruit.png" alt="Equipo" width={40} height={40} />
+                        Equipo
+                        <span className="dot"></span>
+                    </div>
+                </div>
+
+                {/* Top Left Buttons */}
+                <div className="absolute top-4 left-4 flex flex-col space-y-4 z-20">
+                    <div className="menu-button" onClick={handleGirar}>
+                        <Image src="https://img.icons8.com/3d-fluency/94/roulette.png" alt="Girar" width={40} height={40} />
                         Girar
-                    </button>
-                    <button onClick={handleRecompensaDiaria} className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
-                        Recompensa Diaria
-                    </button>
-                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
-                        Ver Ranking
-                    </button>
-                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg shadow-lg transform transition-transform duration-300 hover:scale-110">
-                        Gestionar Economía
-                    </button>
+                    </div>
+                    <div className="menu-button" onClick={handleRecompensaDiaria}>
+                        <Image src="https://img.icons8.com/color/48/gift--v1.png" alt="Diario" width={40} height={40} />
+                        Diario
+                    </div>
                 </div>
             </main>
 
@@ -308,6 +330,22 @@ export default function game() {
             {/* Servers Component */}
             <div className="absolute top-4 right-4">
                 <Servers onSelectServer={(server: string) => setSelectedServer(server)} />
+            </div>
+
+            {/* User Profile in Bottom Right */}
+            <div className="absolute bottom-4 right-4 flex flex-col items-center space-y-2 z-20">
+                <div className="relative w-16 h-16">
+                    <Image
+                        src={session?.user?.image || '/path/to/default-image.jpg'} // Usar la imagen de la sesión o una predeterminada
+                        alt="User Avatar"
+                        className="rounded-full border-2 border-gray-300"
+                        width={64}
+                        height={64}
+                    />
+                    <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-black text-white font-bold px-2 py-1 rounded-md">
+                        {session?.user?.name || 'Usuario'}
+                    </span>
+                </div>
             </div>
 
             {showRoulette && (
@@ -388,6 +426,48 @@ export default function game() {
                     margin-left: 0; /* Align to the left */
                     text-align: center; /* Center the text */
                     background: rgba(0, 0, 0, 0.8);
+                }
+
+                .menu-button {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    color: #ccc;
+                    text-align: center;
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: color 0.3s ease;
+                    filter: drop-shadow(0 0 2px #000);
+                }
+
+                .menu-button:hover {
+                    color: white;
+                }
+
+                .menu-button img {
+                    width: 40px;
+                    height: 40px;
+                    margin-bottom: 5px;
+                    opacity: 0.7;
+                    transition: opacity 0.3s ease;
+                }
+
+                .menu-button:hover img {
+                    opacity: 1;
+                }
+
+                .dot {
+                    position: absolute;
+                    top: 5px;
+                    right: 5px;
+                    width: 8px;
+                    height: 8px;
+                    background: red;
+                    border-radius: 50%;
+                }
+
+                .button-wrapper {
+                    position: relative;
                 }
             `}</style>
         </div>
